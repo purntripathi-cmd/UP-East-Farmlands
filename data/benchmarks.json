@@ -2,6 +2,7 @@
   {
     "id": "kacheri_varuna",
     "name": "Kacheri Varanasi near Varuna Pul (Collectorate / Court)",
+    "district": "Varanasi",
     "description": "Varanasi Revenue Court, Collectorate & Varuna Bridge Zero-Point (Primary Administrative & Land Registry Hub)",
     "lat": 25.3375,
     "lng": 82.9815,
@@ -11,6 +12,7 @@
   {
     "id": "airport_babatpur",
     "name": "Lal Bahadur Shastri International Airport (Babatpur - VNS)",
+    "district": "Varanasi",
     "description": "Varanasi International Airport, NH-56 Agro-Logistics & Cargo Hub",
     "lat": 25.4524,
     "lng": 82.8593,
@@ -18,8 +20,109 @@
     "is_default": false
   },
   {
+    "id": "chandauli_collectorate",
+    "name": "Chandauli District Collectorate & Court (Chandauli City Center)",
+    "district": "Chandauli",
+    "description": "Chandauli District Administrative Headquarters & Revenue Court (Rice Bowl of UP)",
+    "lat": 25.2600,
+    "lng": 83.2650,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "mirzapur_kacheri",
+    "name": "Mirzapur Kacheri & Clock Tower (Mirzapur City Center)",
+    "district": "Mirzapur",
+    "description": "Mirzapur District Court, Ghanta Ghar & Vindhya Administrative Hub",
+    "lat": 25.1480,
+    "lng": 82.5690,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "jaunpur_collectorate",
+    "name": "Jaunpur Collectorate & Olandganj Chowk (Jaunpur City Center)",
+    "district": "Jaunpur",
+    "description": "Jaunpur District Court, Collectorate & Gomti River Basin Center",
+    "lat": 25.7464,
+    "lng": 82.6837,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "ghazipur_collectorate",
+    "name": "Ghazipur Collectorate & Lanka Chowk (Ghazipur City Center)",
+    "district": "Ghazipur",
+    "description": "Ghazipur District Headquarters, Court & Ganga Alluvium Center",
+    "lat": 25.5840,
+    "lng": 83.5770,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "azamgarh_collectorate",
+    "name": "Azamgarh District Collectorate & Chowk (Azamgarh City Center)",
+    "district": "Azamgarh",
+    "description": "Azamgarh Divisional Headquarters & Civil Lines Court",
+    "lat": 26.0738,
+    "lng": 83.1859,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "prayagraj_collectorate",
+    "name": "Prayagraj Collectorate & Civil Lines (Prayagraj City Center)",
+    "district": "Prayagraj",
+    "description": "Prayagraj District Magistrate Office, Civil Lines & Revenue Board",
+    "lat": 25.4500,
+    "lng": 81.8400,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "bhadohi_gyanpur",
+    "name": "Gyanpur Collectorate & Bhadohi Hub (Bhadohi City Center)",
+    "district": "Bhadohi",
+    "description": "Bhadohi District Administrative Headquarters at Gyanpur Kacheri",
+    "lat": 25.3450,
+    "lng": 82.4330,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "sonbhadra_robertsganj",
+    "name": "Robertsganj District Collectorate (Sonbhadra City Center)",
+    "district": "Sonbhadra",
+    "description": "Sonbhadra Administrative Headquarters at Robertsganj",
+    "lat": 24.6850,
+    "lng": 83.0650,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "ballia_collectorate",
+    "name": "Ballia District Collectorate (Ballia City Center)",
+    "district": "Ballia",
+    "description": "Ballia Easternmost District Court & Revenue Office",
+    "lat": 25.7600,
+    "lng": 84.1500,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
+    "id": "mau_collectorate",
+    "name": "Mau District Collectorate (Mau City Center)",
+    "district": "Mau",
+    "description": "Mau District Administrative & Revenue Court Complex",
+    "lat": 25.9400,
+    "lng": 83.5600,
+    "category": "District City Center",
+    "is_default": false
+  },
+  {
     "id": "cantt_railway",
     "name": "Varanasi Junction / Cantt Railway Station (BSB)",
+    "district": "Varanasi",
     "description": "Central Railway Terminal & Purvanchal Passenger/Freight Transit",
     "lat": 25.3278,
     "lng": 82.9873,
@@ -29,6 +132,7 @@
   {
     "id": "kashi_vishwanath",
     "name": "Kashi Vishwanath Dham / Godowlia Chowk",
+    "district": "Varanasi",
     "description": "Historic Kashi Center & Cultural Corridor",
     "lat": 25.3109,
     "lng": 83.0104,
@@ -36,17 +140,9 @@
     "is_default": false
   },
   {
-    "id": "manduadih_bsbs",
-    "name": "Banaras Railway Station (Manduadih - BSBS)",
-    "description": "South-West Varanasi Rail Terminal & DLW Agro-Industrial Corridor",
-    "lat": 25.2974,
-    "lng": 82.9692,
-    "category": "Rail Transit Hub",
-    "is_default": false
-  },
-  {
     "id": "bhu_lanka",
     "name": "Banaras Hindu University (BHU / Lanka Gate)",
+    "district": "Varanasi",
     "description": "Institute of Agricultural Sciences (IAS-BHU) & South Varanasi",
     "lat": 25.2755,
     "lng": 82.9997,
@@ -56,6 +152,7 @@
   {
     "id": "ddu_mughalsarai",
     "name": "Pt. Deen Dayal Upadhyaya Junction (Mughalsarai - DDU)",
+    "district": "Chandauli",
     "description": "Asia's Largest Railway Marshalling Yard & Eastern Freight Corridor",
     "lat": 25.2818,
     "lng": 83.1197,
@@ -63,17 +160,9 @@
     "is_default": false
   },
   {
-    "id": "sarnath_complex",
-    "name": "Sarnath Archaeological Complex & Dhamek Stupa",
-    "description": "North-East Varanasi Heritage & Agricultural Belt",
-    "lat": 25.3811,
-    "lng": 83.0232,
-    "category": "Heritage & North Corridor",
-    "is_default": false
-  },
-  {
     "id": "ring_road_harahua",
     "name": "Ring Road Phase 2 - Harahua Cloverleaf",
+    "district": "Varanasi",
     "description": "Varanasi Outer Bypass Expressway Connecting NH-19, NH-31, and NH-56",
     "lat": 25.3820,
     "lng": 82.9230,
@@ -83,6 +172,7 @@
   {
     "id": "chunar_mirzapur",
     "name": "Chunar Ganga Bridge / NH-19 Agro Junction",
+    "district": "Mirzapur",
     "description": "Southern Gateway to Vindhya Agro Belt & Mirzapur Orchards",
     "lat": 25.1235,
     "lng": 82.8760,

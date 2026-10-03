@@ -1,7 +1,9 @@
 """
 Geo-Routing & Actual Road Distance Engine
-Calculates aerial and realistic driving road distances from selectable reference landmarks in Varanasi,
+Calculates aerial and realistic driving road distances from selectable reference landmarks in Eastern UP,
 defaulting to Kacheri Varanasi near Varuna Pul.
+Supports automatic anchoring to respective District City Centers (Varanasi, Chandauli, Mirzapur,
+Jaunpur, Ghazipur, Azamgarh, Prayagraj, Bhadohi, Sonbhadra, Ballia, Mau).
 Generates one-click Google Maps Navigation and Satellite Exploration links.
 """
 
@@ -15,9 +17,124 @@ DEFAULT_ORIGIN_LAT = 25.3375
 DEFAULT_ORIGIN_LNG = 82.9815
 DEFAULT_ORIGIN_NAME = "Kacheri Varanasi near Varuna Pul (Collectorate / Court)"
 
+# Respective District City Centers (Administrative Collectorates & Zero-Points)
+DISTRICT_CITY_CENTERS: Dict[str, Dict[str, Any]] = {
+    "Varanasi": {
+        "id": "kacheri_varuna",
+        "name": "Kacheri Varanasi near Varuna Pul (Collectorate / Court)",
+        "district": "Varanasi",
+        "lat": 25.3375,
+        "lng": 82.9815,
+        "description": "Varanasi Revenue Court, Collectorate & Varuna Bridge Zero-Point"
+    },
+    "Chandauli": {
+        "id": "chandauli_collectorate",
+        "name": "Chandauli District Collectorate & Court (Chandauli City Center)",
+        "district": "Chandauli",
+        "lat": 25.2600,
+        "lng": 83.2650,
+        "description": "Chandauli District Administrative Headquarters & Revenue Court (Rice Bowl of UP)"
+    },
+    "Mirzapur": {
+        "id": "mirzapur_kacheri",
+        "name": "Mirzapur Kacheri & Clock Tower (Mirzapur City Center)",
+        "district": "Mirzapur",
+        "lat": 25.1480,
+        "lng": 82.5690,
+        "description": "Mirzapur District Court, Ghanta Ghar & Vindhya Administrative Hub"
+    },
+    "Jaunpur": {
+        "id": "jaunpur_collectorate",
+        "name": "Jaunpur Collectorate & Olandganj Chowk (Jaunpur City Center)",
+        "district": "Jaunpur",
+        "lat": 25.7464,
+        "lng": 82.6837,
+        "description": "Jaunpur District Court, Collectorate & Gomti River Basin Center"
+    },
+    "Ghazipur": {
+        "id": "ghazipur_collectorate",
+        "name": "Ghazipur Collectorate & Lanka Chowk (Ghazipur City Center)",
+        "district": "Ghazipur",
+        "lat": 25.5840,
+        "lng": 83.5770,
+        "description": "Ghazipur District Headquarters, Court & Ganga Alluvium Center"
+    },
+    "Azamgarh": {
+        "id": "azamgarh_collectorate",
+        "name": "Azamgarh District Collectorate & Chowk (Azamgarh City Center)",
+        "district": "Azamgarh",
+        "lat": 26.0738,
+        "lng": 83.1859,
+        "description": "Azamgarh Divisional Headquarters & Civil Lines Court"
+    },
+    "Prayagraj": {
+        "id": "prayagraj_collectorate",
+        "name": "Prayagraj Collectorate & Civil Lines (Prayagraj City Center)",
+        "district": "Prayagraj",
+        "lat": 25.4500,
+        "lng": 81.8400,
+        "description": "Prayagraj District Magistrate Office, Civil Lines & Revenue Board"
+    },
+    "Bhadohi": {
+        "id": "bhadohi_gyanpur",
+        "name": "Gyanpur Collectorate & Bhadohi Hub (Bhadohi City Center)",
+        "district": "Bhadohi",
+        "lat": 25.3450,
+        "lng": 82.4330,
+        "description": "Bhadohi District Administrative Headquarters at Gyanpur Kacheri"
+    },
+    "Sonbhadra": {
+        "id": "sonbhadra_robertsganj",
+        "name": "Robertsganj District Collectorate (Sonbhadra City Center)",
+        "district": "Sonbhadra",
+        "lat": 24.6850,
+        "lng": 83.0650,
+        "description": "Sonbhadra Administrative Headquarters at Robertsganj"
+    },
+    "Ballia": {
+        "id": "ballia_collectorate",
+        "name": "Ballia District Collectorate (Ballia City Center)",
+        "district": "Ballia",
+        "lat": 25.7600,
+        "lng": 84.1500,
+        "description": "Ballia Easternmost District Court & Revenue Office"
+    },
+    "Mau": {
+        "id": "mau_collectorate",
+        "name": "Mau District Collectorate (Mau City Center)",
+        "district": "Mau",
+        "lat": 25.9400,
+        "lng": 83.5600,
+        "description": "Mau District Administrative & Revenue Court Complex"
+    },
+    "Kaimur": {
+        "id": "kaimur_bhabua",
+        "name": "Bhabua Collectorate & Kaimur Hub (Kaimur City Center)",
+        "district": "Kaimur",
+        "lat": 25.0450,
+        "lng": 83.6150,
+        "description": "Kaimur District Administrative Center at Bhabua"
+    }
+}
+
+
+def get_city_center_for_district(district_name: str) -> Dict[str, Any]:
+    """
+    Returns the respective city center benchmark (name, lat, lng, description) for any district.
+    Defaults to Kacheri Varanasi near Varuna Pul if district is None, empty, or 'All Districts'.
+    """
+    if not district_name or "All" in district_name:
+        return DISTRICT_CITY_CENTERS["Varanasi"]
+    
+    clean_d = district_name.strip()
+    for d_key, center_obj in DISTRICT_CITY_CENTERS.items():
+        if d_key.lower() == clean_d.lower():
+            return center_obj
+    return DISTRICT_CITY_CENTERS["Varanasi"]
+
 
 def load_landmarks() -> List[Dict[str, Any]]:
-    """Loads all selectable Varanasi reference landmarks."""
+    """Loads all selectable reference landmarks and city centers."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     benchmarks_path = os.path.join(base_dir, "data", "benchmarks.json")
     if os.path.exists(benchmarks_path):

@@ -37,7 +37,9 @@ from utils.geo_routing import (
     get_google_maps_satellite_search_url,
     assign_concentric_ring,
     compute_parcel_routing,
-    load_landmarks
+    load_landmarks,
+    DISTRICT_CITY_CENTERS,
+    get_city_center_for_district
 )
 from utils.favorites_manager import (
     load_favorites,
@@ -326,4 +328,76 @@ def test_map_discovery_and_add_farmland():
     cleaned = [p for p in after_parcels if p.get("id") != new_farm["id"]]
     save_all_parcels(cleaned)
     assert len(load_all_parcels()) == count_before
+
+
+# ============================================================
+# 11. DISTRICT CITY CENTERS RESOLUTION & ROUTING TESTS
+# ============================================================
+def test_district_city_centers_resolution():
+    """Verifies that all 11+ districts map to valid city center benchmarks."""
+    expected_districts = [
+        "Varanasi", "Chandauli", "Mirzapur", "Jaunpur",
+        "Ghazipur", "Azamgarh", "Prayagraj", "Bhadohi",
+        "Sonbhadra", "Ballia", "Mau"
+    ]
+    for d in expected_districts:
+        assert d in DISTRICT_CITY_CENTERS
+        center = DISTRICT_CITY_CENTERS[d]
+        assert "lat" in center and "lng" in center and "name" in center
+        assert 24.0 <= center["lat"] <= 27.0
+        assert 81.0 <= center["lng"] <= 85.0
+
+    # Test get_city_center_for_district (case-insensitive)
+    chandauli_center = get_city_center_for_district("Chandauli")
+    assert "Chandauli" in chandauli_center["name"]
+    assert chandauli_center["lat"] == 25.2600
+    assert chandauli_center["lng"] == 83.2650
+
+    mirzapur_center = get_city_center_for_district("mirzapur")
+    assert "Mirzapur" in mirzapur_center["name"]
+    assert mirzapur_center["lat"] == 25.1480
+
+    jaunpur_center = get_city_center_for_district("Jaunpur")
+    assert "Jaunpur" in jaunpur_center["name"]
+    assert jaunpur_center["lat"] == 25.7464
+
+    # Default fallback for All Districts
+    default_center = get_city_center_for_district("All Districts (UP East)")
+    assert "Kacheri Varanasi" in default_center["name"]
+
+
+def test_routing_from_respective_city_center():
+    """Verifies that when a district filter is applied, distance is calculated from that district's city center."""
+    chandauli_center = get_city_center_for_district("Chandauli")
+    chandauli_parcel = {
+        "name": "Chandauli Chakia Canal Farm",
+        "lat": 25.2700,
+        "lng": 83.2800,
+        "size_acres": 10.0,
+        "price_per_acre_lakhs": 18.0
+    }
+
+    # Route from Chandauli City Center
+    chandauli_routing = compute_parcel_routing(
+        chandauli_parcel,
+        chandauli_center["lat"],
+        chandauli_center["lng"],
+        chandauli_center["name"]
+    )
+    # Distance from Chandauli City Center should be very close (~2-4 km)
+    assert chandauli_routing["road_km"] < 5.0
+    assert chandauli_routing["origin_name"] == chandauli_center["name"]
+    assert "origin=25.26000,83.26500" in chandauli_routing["google_directions_url"]
+
+    # When routed from Varanasi Kacheri, the same parcel would be ~35-40 km away
+    varanasi_center = get_city_center_for_district("Varanasi")
+    varanasi_routing = compute_parcel_routing(
+        chandauli_parcel,
+        varanasi_center["lat"],
+        varanasi_center["lng"],
+        varanasi_center["name"]
+    )
+    assert varanasi_routing["road_km"] > 30.0
+    assert "origin=25.33750,82.98150" in varanasi_routing["google_directions_url"]
+
 

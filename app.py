@@ -3,15 +3,16 @@ UP East & Varanasi Farmlands Intelligence Platform
 Streamlit Web Application solely dedicated to Varanasi and surrounding Eastern UP agricultural estates.
 Features:
 - Mobile-Friendly Adaptive Layout (Media queries, responsive grid, touch-friendly touch targets)
+- Left Panel (Sidebar) Visible Always & Slightly Wider (375px min-width)
+- Dynamic Reference City Center: Automatically anchors to respective District City Center upon district filtering
+- Center Selection & Override ("center should be allowed to change"): Manual switcher in both Sidebar and Tab 1
+- Tab 1 District Filter: Directly filters the Property Summary Table and Map by District
+- Distance dynamically calculated from respective City Center (Varanasi Kacheri, Chandauli Collectorate, Mirzapur Kacheri, Jaunpur Collectorate, Ghazipur Collectorate, etc.)
 - Integrated Google Satellite & Roadmap with Search & Micro-Market Auto-Centering
 - Interactive Map Pinning: Click on map to add farmland properties to master inventory
-- Selectable Origin Landmark (Default: Kacheri Varanasi near Varuna Pul)
-- Concentric Distance Rings (20 km, 40 km, 60 km, 80 km, 100 km, 200 km buffer)
-- Comprehensive Farmland Table in Tab 1 with full details summary
+- Comprehensive Farmland Table in Tab 1 with full details summary & Critique AI ledger
 - Independent Critique AI Engine (Negative feedback auditing, 8 risk vectors, Govt site verification)
 - Persistent User Favorites / Shortlisting system
-- Published News, Media Source, Date, and Verification Links
-- Duplicate-Free Weekly AI/ML Spectral & Provenance Scanner with SQLite persistence
 - Real-time CPU, RAM, and Hosted Environment resource monitor
 - Multi-Sheet Excel & Master CSV Exporters
 """
@@ -26,6 +27,8 @@ from utils.geo_routing import (
     DEFAULT_ORIGIN_LAT,
     DEFAULT_ORIGIN_LNG,
     DEFAULT_ORIGIN_NAME,
+    DISTRICT_CITY_CENTERS,
+    get_city_center_for_district,
     load_landmarks,
     compute_parcel_routing,
     assign_concentric_ring,
@@ -58,15 +61,15 @@ from utils.farmland_view import (
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
 from utils.farmland_repository import create_and_add_farmland, load_all_parcels
 
-# Page Configuration
+# Page Configuration: Sidebar Visible Always
 st.set_page_config(
     page_title="UP East Farmlands | Varanasi Agro-Intelligence",
     page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# Custom Styling for Professional Institutional Aesthetics and Mobile Responsiveness
+# Custom Styling for Professional Institutional Aesthetics, Mobile Responsiveness, and Permanent Wide Sidebar
 st.markdown("""
 <style>
     .main {
@@ -90,6 +93,35 @@ st.markdown("""
     .block-container {
         padding-top: 1rem;
         padding-bottom: 2rem;
+    }
+
+    /* Left Panel (Sidebar): Visible always, slightly wider (375px) */
+    section[data-testid="stSidebar"] {
+        min-width: 360px !important;
+        max-width: 400px !important;
+        width: 375px !important;
+        background-color: #0F172A !important;
+        border-right: 1px solid #1E293B !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1.2rem !important;
+        padding-left: 1.1rem !important;
+        padding-right: 1.1rem !important;
+    }
+
+    /* Keep left sidebar visible on desktop and tablet without auto-collapsing */
+    @media (min-width: 768px) {
+        section[data-testid="stSidebar"] {
+            transform: none !important;
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
+        }
+        button[data-testid="baseButton-header"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarHeader"] > button {
+            display: none !important;
+        }
     }
 
     /* Modern Mobile Responsive Layout */
@@ -150,7 +182,19 @@ def load_farmlands_dataset():
     return load_all_parcels()
 
 
-# Initialize session states
+# Load Base Datasets
+all_parcels = load_farmlands_dataset()
+landmarks = load_landmarks()
+landmark_dict = {lm["name"]: lm for lm in landmarks}
+default_lm_name = next((lm["name"] for lm in landmarks if lm.get("is_default")), landmarks[0]["name"])
+
+# Distinct Districts in Dataset
+all_districts = sorted(list(set(p.get("regional_district", "Varanasi") for p in all_parcels if p.get("regional_district"))))
+district_choices = ["All Districts (UP East)"] + all_districts
+
+# -------------------------------------------------------------
+# SESSION STATE INITIALIZATION
+# -------------------------------------------------------------
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = load_favorites()
 
@@ -160,36 +204,83 @@ if "map_clicked_coord" not in st.session_state:
 if "map_search_term" not in st.session_state:
     st.session_state["map_search_term"] = ""
 
-# Load Base Datasets
-all_parcels = load_farmlands_dataset()
-landmarks = load_landmarks()
+if "filter_district" not in st.session_state:
+    st.session_state["filter_district"] = "All Districts (UP East)"
 
-# Map Landmark Lookup
-landmark_dict = {lm["name"]: lm for lm in landmarks}
-default_lm_name = next((lm["name"] for lm in landmarks if lm.get("is_default")), landmarks[0]["name"])
+if "active_center_name" not in st.session_state:
+    st.session_state["active_center_name"] = default_lm_name
+
+if "manual_center_override" not in st.session_state:
+    st.session_state["manual_center_override"] = False
 
 # -------------------------------------------------------------
-# SIDEBAR FILTERS & CONTROLS
+# DISTRICT FILTER CALLBACKS & CITY CENTER AUTO-ANCHORING
+# -------------------------------------------------------------
+def sync_district_from_sidebar():
+    st.session_state["filter_district"] = st.session_state["sb_dist_choice"]
+    if not st.session_state.get("manual_center_override", False):
+        center_obj = get_city_center_for_district(st.session_state["filter_district"])
+        st.session_state["active_center_name"] = center_obj["name"]
+
+def sync_district_from_tab1():
+    st.session_state["filter_district"] = st.session_state["t1_dist_choice"]
+    if not st.session_state.get("manual_center_override", False):
+        center_obj = get_city_center_for_district(st.session_state["filter_district"])
+        st.session_state["active_center_name"] = center_obj["name"]
+
+def sync_center_from_sidebar():
+    st.session_state["active_center_name"] = st.session_state["sb_center_choice"]
+    st.session_state["manual_center_override"] = True
+
+# -------------------------------------------------------------
+# SIDEBAR FILTERS & CONTROLS (Always Visible, 375px Wide)
 # -------------------------------------------------------------
 st.sidebar.image("https://img.icons8.com/fluency/96/wheat.png", width=60)
 st.sidebar.title("Agro-Land Filters")
 st.sidebar.caption("Varanasi & Purvanchal Concentric Corridor")
 
-# 1. Landmark Origin Selector (DEFAULT: Kacheri Varanasi near Varuna Pul)
-st.sidebar.markdown("### 📍 Select Origin Landmark")
-selected_lm_name = st.sidebar.selectbox(
-    "Road Distance Measured From:",
-    options=list(landmark_dict.keys()),
-    index=list(landmark_dict.keys()).index(default_lm_name) if default_lm_name in landmark_dict else 0,
-    help="Default is Kacheri Varanasi near Varuna Pul (Collectorate & District Courts). Road distances dynamically recalculate from this point."
+# 1. District Filter in Sidebar (Synchronized with Tab 1)
+st.sidebar.markdown("### 📍 Filter by District")
+current_dist_idx = district_choices.index(st.session_state["filter_district"]) if st.session_state["filter_district"] in district_choices else 0
+sidebar_dist = st.sidebar.selectbox(
+    "Active District Filter:",
+    options=district_choices,
+    index=current_dist_idx,
+    key="sb_dist_choice",
+    on_change=sync_district_from_sidebar,
+    help="When a specific district is chosen, distance is automatically calculated from that district's city center."
 )
-active_lm = landmark_dict[selected_lm_name]
+
+# 2. Reference Zero-Point (Center) Selector ("center should be allowed to change")
+st.sidebar.markdown("### 🏛️ Distance Zero-Point (Center)")
+center_options = list(landmark_dict.keys())
+current_center_idx = center_options.index(st.session_state["active_center_name"]) if st.session_state["active_center_name"] in center_options else 0
+
+selected_center_name = st.sidebar.selectbox(
+    "Road Distance Measured From:",
+    options=center_options,
+    index=current_center_idx,
+    key="sb_center_choice",
+    on_change=sync_center_from_sidebar,
+    help="Default anchors to respective District City Center. You can change this to any landmark or custom point anytime."
+)
+
+active_lm = landmark_dict.get(st.session_state["active_center_name"], landmark_dict[default_lm_name])
 origin_lat = float(active_lm["lat"])
 origin_lng = float(active_lm["lng"])
+center_short = active_lm["name"].split("(")[0].strip()
 
-st.sidebar.info(f"**Active Zero-Point:** {active_lm['name']}\n\n*({active_lm.get('description', '')})*")
+if st.session_state.get("manual_center_override", False):
+    st.sidebar.warning(f"⚠️ Custom Center Active: **{center_short}**")
+    if st.sidebar.button("🔄 Auto-Reset to District City Center", use_container_width=True):
+        st.session_state["manual_center_override"] = False
+        center_obj = get_city_center_for_district(st.session_state["filter_district"])
+        st.session_state["active_center_name"] = center_obj["name"]
+        st.rerun()
+else:
+    st.sidebar.info(f"**Auto Zero-Point:** {active_lm['name']}\n\n*({active_lm.get('description', '')})*")
 
-# Precompute Dynamic Routing for all parcels relative to selected landmark
+# Precompute Dynamic Routing for all parcels relative to active zero-point
 routings = {}
 critique_cache = {}
 for p in all_parcels:
@@ -197,7 +288,7 @@ for p in all_parcels:
     routings[pid] = compute_parcel_routing(p, origin_lat, origin_lng, active_lm["name"])
     critique_cache[pid] = evaluate_property_critique(p)
 
-# 2. Concentric Radial Distance Selector
+# 3. Concentric Radial Distance Selector
 st.sidebar.markdown("### ⭕ Concentric Radial Buffer")
 ring_options = [
     "All Radii (Full UP East Region)",
@@ -210,29 +301,21 @@ ring_options = [
 ]
 selected_ring = st.sidebar.selectbox("Filter by Radial Distance Ring:", options=ring_options, index=0)
 
-# 3. Maximum Road Distance Slider
+# 4. Maximum Road Distance Slider
 max_road_km = st.sidebar.slider(
-    "Max Actual Road Distance (km):",
+    f"Max Road Distance from {center_short[:16]} (km):",
     min_value=5,
     max_value=200,
-    value=100,
+    value=120,
     step=5,
     help="Filter by estimated actual road driving distance from active origin."
 )
 
-# 4. Shortlisted Favorites Quick-Toggle
+# 5. Shortlisted Favorites Quick-Toggle
 show_fav_only = st.sidebar.checkbox(
     f"⭐ Show Only My Favorites ({len(st.session_state['favorites'])})",
     value=False,
     help="Display only the parcels you have marked as favorite."
-)
-
-# 5. District Multi-Select
-all_districts = sorted(list(set(p.get("regional_district", "Varanasi") for p in all_parcels)))
-selected_districts = st.sidebar.multiselect(
-    "Filter by District:",
-    options=all_districts,
-    default=all_districts
 )
 
 # 6. Price per Acre Range Slider
@@ -291,6 +374,11 @@ for p in all_parcels:
     if show_fav_only and not is_favorite(pid, st.session_state["favorites"]):
         continue
 
+    # Check District Filter (Single selection / All Districts)
+    if st.session_state["filter_district"] != "All Districts (UP East)":
+        if dist.lower() != st.session_state["filter_district"].lower():
+            continue
+
     # Check Radial Ring Filter
     if "Within 20 km" in selected_ring and aerial_km > 20.0:
         continue
@@ -309,10 +397,6 @@ for p in all_parcels:
     if road_km > max_road_km:
         continue
 
-    # Check District
-    if dist not in selected_districts:
-        continue
-
     # Check Price
     if not (selected_price_range[0] <= price <= selected_price_range[1]):
         continue
@@ -323,7 +407,7 @@ for p in all_parcels:
 
     filtered_parcels.append(p)
 
-# Sort parcels by road distance from selected origin
+# Sort parcels by road distance from active origin
 filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km", 999.0))
 
 # -------------------------------------------------------------
@@ -331,7 +415,7 @@ filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km"
 # -------------------------------------------------------------
 st.title("🌾 UP East & Varanasi Farmlands Intelligence Platform")
 st.markdown(
-    f"**Concentric Agro-Intelligence & Due Diligence** | Origin Reference: **{active_lm['name']}**"
+    f"**Concentric Agro-Intelligence & Due Diligence** | Active Zero-Point: **{active_lm['name']}**"
 )
 
 # Top KPI Metric Cards (Responsive on Mobile)
@@ -341,7 +425,7 @@ with kpi1:
 with kpi2:
     if filtered_parcels:
         avg_dist = round(sum(routings[str(p["id"])]["road_km"] for p in filtered_parcels) / len(filtered_parcels), 1)
-        st.metric("Avg Road Distance", f"{avg_dist} km", f"From {active_lm['name'].split('(')[0].strip()[:18]}")
+        st.metric("Avg Road Distance", f"{avg_dist} km", f"From {center_short[:16]}")
     else:
         st.metric("Avg Road Distance", "N/A")
 with kpi3:
@@ -375,19 +459,54 @@ view_tabs = st.tabs([
 # TAB 1: INTERACTIVE GOOGLE MAP, SEARCH & PROPERTY CREATOR
 # -------------------------------------------------------------
 with view_tabs[0]:
-    st.markdown(f"### 🗺️ Google Satellite & Hybrid Map with Concentric Buffers")
-    st.caption(f"Showing concentric radial buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) around **{active_lm['name']}**. Search any area, or click anywhere on the map to add a new farmland property!")
+    # Tab 1 District Filter, Center Switcher & Quick Search
+    t1_c1, t1_c2, t1_c3, t1_c4 = st.columns([1.6, 1.8, 1.8, 1.2])
 
-    # Search Bar & Micro-Market Jump
-    s_col1, s_col2 = st.columns([2.5, 1.2])
-    with s_col1:
+    with t1_c1:
+        t1_dist_idx = district_choices.index(st.session_state["filter_district"]) if st.session_state["filter_district"] in district_choices else 0
+        st.selectbox(
+            "📍 Filter Table & Map by District:",
+            options=district_choices,
+            index=t1_dist_idx,
+            key="t1_dist_choice",
+            on_change=sync_district_from_tab1,
+            help="Select a district to filter the table and map. Distance will be calculated from that District's City Center."
+        )
+
+    with t1_c2:
+        st.markdown(f"**🏛️ Distance Zero-Point:**")
+        st.caption(f"Currently: **{center_short[:30]}**")
+        with st.popover("⚙️ Change Center Zero-Point", use_container_width=True):
+            st.markdown("##### 🏛️ Change Reference Zero-Point")
+            st.caption("Change the origin landmark or city center from which all road distances and concentric rings are computed.")
+            new_t1_center = st.selectbox(
+                "Select Center Reference:",
+                options=center_options,
+                index=center_options.index(st.session_state["active_center_name"]) if st.session_state["active_center_name"] in center_options else 0,
+                key="popover_center_choice"
+            )
+            p_btn1, p_btn2 = st.columns(2)
+            with p_btn1:
+                if st.button("Apply Selected Center", type="primary", use_container_width=True):
+                    st.session_state["active_center_name"] = new_t1_center
+                    st.session_state["manual_center_override"] = True
+                    st.rerun()
+            with p_btn2:
+                if st.button("Auto-Anchor to City Center", use_container_width=True):
+                    st.session_state["manual_center_override"] = False
+                    center_obj = get_city_center_for_district(st.session_state["filter_district"])
+                    st.session_state["active_center_name"] = center_obj["name"]
+                    st.rerun()
+
+    with t1_c3:
         map_search_input = st.text_input(
-            "🔍 Search Farmland Properties or Micro-Markets on Map:",
+            "🔍 Search Properties (Table & Map):",
             value=st.session_state.get("map_search_term", ""),
-            placeholder="Type name, village, tehsil, district, or highway (e.g. Rohania, Sevapuri, Chandauli, Mirzapur, NH-19)...",
+            placeholder="Type name, village, khasra, highway...",
             key="tab1_search_bar"
         )
-    with s_col2:
+
+    with t1_c4:
         micro_market_jump = st.selectbox(
             "📍 Jump to Micro-Market:",
             options=[
@@ -401,6 +520,9 @@ with view_tabs[0]:
             ],
             key="micro_market_select"
         )
+
+    st.markdown(f"### 🗺️ Google Satellite & Hybrid Map with Concentric Buffers")
+    st.caption(f"Concentric buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) radiating from **{active_lm['name']}**. Search any area, or click anywhere on the map to add a new farmland property!")
 
     # Micro-market coordinate lookup
     micro_market_coords = {
@@ -443,13 +565,13 @@ with view_tabs[0]:
     map_c1, map_c2 = st.columns([3, 1])
     with map_c2:
         st.markdown("#### 🧭 Map Legend")
-        st.markdown("""
-        - 🌟 **Dark Red Star:** Active Origin (**Kacheri Varanasi**)
+        st.markdown(f"""
+        - 🌟 **Dark Red Star:** Active Origin (**{center_short}**)
         - 🟢 **20 km Ring:** Urban Fringe / Ring Road
-        - 🔵 **40 km Ring:** Chandauli / Mughalsarai
-        - 🟡 **60 km Ring:** Ghazipur / Jaunpur Core
-        - 🟣 **80 km Ring:** Azamgarh / Robertsganj
-        - 🔴 **100 km Ring:** Outer Perimeter
+        - 🔵 **40 km Ring:** Intermediate Ring
+        - 🟡 **60 km Ring:** Regional Buffer
+        - 🟣 **80 km Ring:** Outer Perimeter
+        - 🔴 **100 km Ring:** Regional Boundary
         - 🌿 **Green Pin:** Sovereign Grade A+ (Score ≥ 90)
         - 🔷 **Blue Pin:** Institutional Grade A (Score 75-89)
         - 💜 **Purple Pin:** Starred Favorite
@@ -518,35 +640,33 @@ with view_tabs[0]:
     pinned_ring = assign_concentric_ring(pinned_aerial)
 
     expander_title = f"📍 ➕ Add Farmland Property from Map {'[📍 PINNED: ' + str(pinned_lat) + ', ' + str(pinned_lng) + ']' if is_coord_pinned else '(Click Map or Enter Coordinates)'}"
-    
     with st.expander(expander_title, expanded=is_coord_pinned):
-        st.markdown("#### 🌾 Discover & Register Farmland Parcel into Master Portfolio")
-        st.caption(f"Calculates actual road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha conversions, sweet water TDS estimates, and runs Independent Critique AI audit.")
+        st.markdown("#### 🌾 Discover & Register New Farmland Property")
+        st.caption(f"Pre-populated with coordinates from your Google Map interaction. Actual road distance is automatically calculated from **{active_lm['name']}**.")
 
-        p_stat_col1, p_stat_col2, p_stat_col3 = st.columns(3)
-        with p_stat_col1:
-            st.info(f"🚗 **Calculated Road Distance:** {pinned_road} km (~{pinned_mins} mins drive)")
-        with p_stat_col2:
-            st.info(f"⭕ **Concentric Buffer Ring:** {pinned_ring}")
-        with p_stat_col3:
-            st.info(f"🏛️ **Reference Origin:** {active_lm['name'].split('(')[0].strip()[:24]}")
+        # Real-time Telemetry Preview
+        p_card1, p_card2, p_card3 = st.columns(3)
+        with p_card1:
+            st.info(f"🚗 **Actual Road Distance:** `{pinned_road} km` (~`{pinned_mins} mins` driving)")
+        with p_card2:
+            st.info(f"⭕ **Concentric Ring:** `{pinned_ring}`")
+        with p_card3:
+            st.info(f"📍 **Zero-Point:** `{center_short}`")
 
         with st.form("add_farmland_from_map_form", clear_on_submit=False):
-            f_c1, f_c2 = st.columns([2, 1.2])
-            with f_c1:
-                prop_name = st.text_input("Property / Estate Name *", placeholder="e.g. Rohania Ring Road Organic Agro Estate")
-            with f_c2:
+            f_col1, f_col2 = st.columns(2)
+            with f_col1:
+                prop_name = st.text_input("Farmland Estate Name *", placeholder="e.g. Rohania Ring Road Organic Agro Estate")
                 prop_district = st.selectbox(
                     "District *",
-                    options=["Varanasi", "Chandauli", "Mirzapur", "Jaunpur", "Ghazipur", "Azamgarh", "Prayagraj", "Bhadohi", "Sonbhadra", "Ballia", "Mau", "Kaimur"],
-                    index=0
+                    options=all_districts,
+                    index=all_districts.index(st.session_state["filter_district"]) if st.session_state["filter_district"] in all_districts else 0
                 )
-
-            f_loc1, f_loc2 = st.columns([2, 1.2])
-            with f_loc1:
-                prop_location = st.text_input("Tehsil / Village / Landmark *", placeholder="e.g. Sevapuri Block, Near Kapsethi Crossing")
-            with f_loc2:
-                prop_khasra = st.text_input("Khasra / Khatauni Number", value="Khasra Verified on UP Bhulekh")
+                prop_location = st.text_input("Specific Village / Tehsil / Corridor *", placeholder="e.g. Village Kanchanpur, Sevapuri")
+            with f_col2:
+                prop_khasra = st.text_input("Khasra / Khatauni Number *", placeholder="e.g. Khasra 142/1, Khatauni 288")
+                prop_approach = st.selectbox("Road Approach *", ["Direct National Highway (NH)", "Paved Bitumen Link (18-24 ft)", "Paved Rural Road (12-14 ft)", "Chak Road / Canal Service Lane"])
+                prop_water = st.selectbox("Primary Water Source *", ["Dedicated Tubewell / Deep Borewell", "Canal Irrigated + Submersible", "River Lift + Open Well", "Submersible Borewell"])
 
             f_coord1, f_coord2 = st.columns(2)
             with f_coord1:
@@ -614,11 +734,11 @@ with view_tabs[0]:
                     st.error(f"❌ Error: {msg}")
 
     # -------------------------------------------------------------
-    # PROPERTY SUMMARY TABLE IN TAB 1
+    # PROPERTY SUMMARY TABLE IN TAB 1 (FILTERABLE BY DISTRICT)
     # -------------------------------------------------------------
     st.markdown("---")
-    st.markdown("### 📋 Complete Property Summary & Critique AI Ledger")
-    st.caption(f"Summary table of all **{len(display_parcels)}** properties matching filters, with actual driving road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha units, and Critique AI risk scores.")
+    st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
+    st.caption(f"Showing **{len(display_parcels)}** properties matching filters. All road driving distances and driving times are calculated from **{active_lm['name']}**.")
 
     if display_parcels:
         tab1_rows = []
@@ -634,7 +754,7 @@ with view_tabs[0]:
                 "Fav": "⭐" if is_f else "—",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
-                "Road Dist (km)": r.get("road_km"),
+                f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
                 "Acres": p.get("size_acres"),
@@ -655,7 +775,7 @@ with view_tabs[0]:
             })
 
         df_tab1 = pd.DataFrame(tab1_rows)
-        st.dataframe(df_tab1, use_container_width=True, height=400)
+        st.dataframe(df_tab1, use_container_width=True, height=450)
     else:
         st.info("No records matching filter or search query.")
 
@@ -716,7 +836,7 @@ with view_tabs[1]:
 # -------------------------------------------------------------
 with view_tabs[2]:
     st.markdown("### 📊 Master Farmland Comparison Ledger")
-    st.caption("Comprehensive data ledger with road distance, Purvanchal land units (Pakka Bigha), water TDS, due diligence scores, Critique AI audits, and published news.")
+    st.caption(f"Comprehensive data ledger with road distance from **{active_lm['name']}**, Purvanchal land units (Pakka Bigha), water TDS, due diligence scores, Critique AI audits, and published news.")
 
     if filtered_parcels:
         table_rows = []
@@ -732,7 +852,7 @@ with view_tabs[2]:
                 "Fav": "⭐" if is_f else "—",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
-                "Road Dist (km)": r.get("road_km"),
+                f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
                 "Acres": p.get("size_acres"),
@@ -783,7 +903,7 @@ with view_tabs[3]:
 </div>
 <div style="color: #F8FAFC; font-weight: 600; font-size: 14px; margin-bottom: 4px;">{news_title}</div>
 <div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">
-<b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {active_lm['name'].split('(')[0].strip()}
+<b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {center_short}
 </div>
 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; flex-wrap: wrap; gap: 6px;">
 <span style="color: #64748B;">Published Date: {news_date}</span>
@@ -815,7 +935,7 @@ with view_tabs[4]:
                 "S.No.": idx + 1,
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
-                "Road Distance (km)": r.get("road_km"),
+                f"Road Distance from {center_short[:20]} (km)": r.get("road_km"),
                 "Driving Time": r.get("driving_time_display"),
                 "Acres": p.get("size_acres"),
                 "Pakka Bigha": unit.get("pakka_bigha"),
@@ -862,7 +982,7 @@ with view_tabs[5]:
         st.download_button(
             label="⬇️ Download UP East Farmlands Excel (.xlsx)",
             data=excel_bytes,
-            file_name=f"UP_East_Farmlands_Portfolio_{selected_lm_name.split('(')[0].strip().replace(' ', '_')}.xlsx",
+            file_name=f"UP_East_Farmlands_Portfolio_{center_short.replace(' ', '_')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
@@ -880,7 +1000,7 @@ with view_tabs[5]:
         st.download_button(
             label="⬇️ Download Farmlands Master CSV (.csv)",
             data=csv_bytes,
-            file_name="UP_East_Farmlands_Master.csv",
+            file_name=f"UP_East_Farmlands_Master_{center_short.replace(' ', '_')}.csv",
             mime="text/csv",
             use_container_width=True
         )
