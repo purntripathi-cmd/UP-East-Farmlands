@@ -1,0 +1,92 @@
+[
+  {
+    "id": "kacheri_varuna",
+    "name": "Kacheri Varanasi near Varuna Pul (Collectorate / Court)",
+    "description": "Varanasi Revenue Court, Collectorate & Varuna Bridge Zero-Point (Primary Administrative & Land Registry Hub)",
+    "lat": 25.3375,
+    "lng": 82.9815,
+    "category": "Administrative Hub",
+    "is_default": true
+  },
+  {
+    "id": "airport_babatpur",
+    "name": "Lal Bahadur Shastri International Airport (Babatpur - VNS)",
+    "description": "Varanasi International Airport, NH-56 Agro-Logistics & Cargo Hub",
+    "lat": 25.4524,
+    "lng": 82.8593,
+    "category": "Air Cargo & Logistics Hub",
+    "is_default": false
+  },
+  {
+    "id": "cantt_railway",
+    "name": "Varanasi Junction / Cantt Railway Station (BSB)",
+    "description": "Central Railway Terminal & Purvanchal Passenger/Freight Transit",
+    "lat": 25.3278,
+    "lng": 82.9873,
+    "category": "Rail Transit Hub",
+    "is_default": false
+  },
+  {
+    "id": "kashi_vishwanath",
+    "name": "Kashi Vishwanath Dham / Godowlia Chowk",
+    "description": "Historic Kashi Center & Cultural Corridor",
+    "lat": 25.3109,
+    "lng": 83.0104,
+    "category": "Urban Core",
+    "is_default": false
+  },
+  {
+    "id": "manduadih_bsbs",
+    "name": "Banaras Railway Station (Manduadih - BSBS)",
+    "description": "South-West Varanasi Rail Terminal & DLW Agro-Industrial Corridor",
+    "lat": 25.2974,
+    "lng": 82.9692,
+    "category": "Rail Transit Hub",
+    "is_default": false
+  },
+  {
+    "id": "bhu_lanka",
+    "name": "Banaras Hindu University (BHU / Lanka Gate)",
+    "description": "Institute of Agricultural Sciences (IAS-BHU) & South Varanasi",
+    "lat": 25.2755,
+    "lng": 82.9997,
+    "category": "Academic & Agro-Research Hub",
+    "is_default": false
+  },
+  {
+    "id": "ddu_mughalsarai",
+    "name": "Pt. Deen Dayal Upadhyaya Junction (Mughalsarai - DDU)",
+    "description": "Asia's Largest Railway Marshalling Yard & Eastern Freight Corridor",
+    "lat": 25.2818,
+    "lng": 83.1197,
+    "category": "Freight & Rail Marshalling Hub",
+    "is_default": false
+  },
+  {
+    "id": "sarnath_complex",
+    "name": "Sarnath Archaeological Complex & Dhamek Stupa",
+    "description": "North-East Varanasi Heritage & Agricultural Belt",
+    "lat": 25.3811,
+    "lng": 83.0232,
+    "category": "Heritage & North Corridor",
+    "is_default": false
+  },
+  {
+    "id": "ring_road_harahua",
+    "name": "Ring Road Phase 2 - Harahua Cloverleaf",
+    "description": "Varanasi Outer Bypass Expressway Connecting NH-19, NH-31, and NH-56",
+    "lat": 25.3820,
+    "lng": 82.9230,
+    "category": "Expressway Corridor",
+    "is_default": false
+  },
+  {
+    "id": "chunar_mirzapur",
+    "name": "Chunar Ganga Bridge / NH-19 Agro Junction",
+    "description": "Southern Gateway to Vindhya Agro Belt & Mirzapur Orchards",
+    "lat": 25.1235,
+    "lng": 82.8760,
+    "category": "Highway Junction",
+    "is_default": false
+  }
+]
