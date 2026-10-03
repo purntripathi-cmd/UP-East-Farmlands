@@ -529,6 +529,22 @@ st.markdown("""
             overflow-x: auto !important;
         }
     }
+
+    /* Table Column Header: Shrink text, wrap words, compact padding, eliminate excessive column width */
+    [data-testid="stDataFrame"] th,
+    [data-testid="stTable"] th,
+    div[data-testid="stDataFrame"] div[role="columnheader"],
+    div[data-testid="stDataFrame"] div[role="columnheader"] span,
+    div[data-testid="stDataFrame"] div[role="columnheader"] p {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        line-height: 1.15 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+        padding: 3px 5px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1360,7 +1376,7 @@ with view_tabs[0]:
                 "Estate Name": p.get("name"),
                 "Status": status_text,
                 "District": p.get("regional_district"),
-                f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
+                "Road Dist (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
                 "Acres": acres_val,
@@ -1386,10 +1402,23 @@ with view_tabs[0]:
         # Freeze first 3 columns (S.No., Fav / Shortlisted By, Estate Name)
         tab1_col_config = {
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
-            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Shortlisted By", pinned=True, width="medium"),
+            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Shortlist", pinned=True, width="small"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
-            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f"),
-            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag", help="Section 98 UP Revenue Code 2006 compliance flag. SC/ST land cannot be purchased by General caste buyers without prior DM permission."),
+            "Status": st.column_config.TextColumn("Status", width="small"),
+            "District": st.column_config.TextColumn("District", width="small"),
+            "Road Dist (km)": st.column_config.NumberColumn("Road Dist (km)", help=f"Driving distance from {center_short}", format="%.1f km", width="small"),
+            "Drive Time": st.column_config.TextColumn("Drive Time", width="small"),
+            "Radial Ring": st.column_config.TextColumn("Ring", width="small"),
+            "Acres": st.column_config.NumberColumn("Acres", format="%.2f", width="small"),
+            "Total Bigha": st.column_config.NumberColumn("Bigha (UP)", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f", width="small"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98", help="Section 98 UP Revenue Code 2006 compliance flag.", width="medium"),
+            "Price/Acre (₹L)": st.column_config.NumberColumn("Price/Ac (₹L)", format="₹%.1f L", width="small"),
+            "Total (₹Cr)": st.column_config.NumberColumn("Total (₹Cr)", format="₹%.2f Cr", width="small"),
+            "Elevation (m)": st.column_config.NumberColumn("Elev (m)", format="%d m", width="small"),
+            "Water TDS (ppm)": st.column_config.NumberColumn("TDS (ppm)", format="%d", width="small"),
+            "DD Score": st.column_config.NumberColumn("DD Score", format="%d", width="small"),
+            "Critique AI Score": st.column_config.NumberColumn("Critique", help="Critique AI Score (0-100)", format="%d/100", width="small"),
+            "Critique Risk Verdict": st.column_config.TextColumn("Critique Verdict", width="small"),
         }
         st.dataframe(df_tab1, use_container_width=True, height=450, column_config=tab1_col_config, hide_index=True)
 
@@ -1677,7 +1706,7 @@ with view_tabs[2]:
                 "Estate Name": p.get("name"),
                 "Status": status_text,
                 "District": p.get("regional_district"),
-                f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
+                "Road Dist (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
                 "Acres": acres_val,
@@ -1707,8 +1736,21 @@ with view_tabs[2]:
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
             "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
-            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f"),
-            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag", help="Section 98 UP Revenue Code 2006 compliance flag."),
+            "Status": st.column_config.TextColumn("Status", width="small"),
+            "District": st.column_config.TextColumn("District", width="small"),
+            "Road Dist (km)": st.column_config.NumberColumn("Road Dist (km)", help=f"Road distance from {center_short}", format="%.1f km", width="small"),
+            "Drive Time": st.column_config.TextColumn("Drive Time", width="small"),
+            "Radial Ring": st.column_config.TextColumn("Ring", width="small"),
+            "Acres": st.column_config.NumberColumn("Acres", format="%.2f", width="small"),
+            "Total Bigha": st.column_config.NumberColumn("Bigha (UP)", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f", width="small"),
+            "Biswa": st.column_config.NumberColumn("Biswa", format="%.1f", width="small"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98", help="Section 98 UP Revenue Code 2006 compliance flag.", width="medium"),
+            "Price/Acre (₹L)": st.column_config.NumberColumn("Price/Ac (₹L)", format="₹%.1f L", width="small"),
+            "Total (₹Cr)": st.column_config.NumberColumn("Total (₹Cr)", format="₹%.2f Cr", width="small"),
+            "Elevation (m)": st.column_config.NumberColumn("Elev (m)", format="%d m", width="small"),
+            "Water TDS (ppm)": st.column_config.NumberColumn("TDS (ppm)", format="%d", width="small"),
+            "Due Diligence Score": st.column_config.NumberColumn("DD Score", format="%d", width="small"),
+            "Critique Risk Score": st.column_config.NumberColumn("Critique", format="%d/100", width="small"),
         }
         st.dataframe(df_table, use_container_width=True, height=500, column_config=tab3_col_config, hide_index=True)
     else:
@@ -1805,13 +1847,13 @@ with view_tabs[4]:
                 "Favorited By": ", ".join(cur_u_list) if cur_u_list else "—",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
-                f"Road Distance from {center_short[:20]} (km)": r.get("road_km"),
-                "Driving Time": r.get("driving_time_display"),
+                "Road Dist (km)": r.get("road_km"),
+                "Drive Time": r.get("driving_time_display"),
                 "Acres": acres_val,
                 "Total Bigha": total_bigha_val,
                 "Caste / Sec 98 Flag": caste_badge,
-                "Price / Acre (₹ Lakhs)": p.get("price_per_acre_lakhs"),
-                "Total Price (₹ Cr)": p.get("total_price_cr"),
+                "Price/Acre (₹L)": p.get("price_per_acre_lakhs"),
+                "Total (₹Cr)": p.get("total_price_cr"),
                 "Soil pH": p.get("soil_ph"),
                 "Water TDS (ppm)": p.get("water_tds_ppm"),
                 "Due Diligence Score": p.get("due_diligence_score"),
@@ -1826,11 +1868,19 @@ with view_tabs[4]:
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
             "Favorited By": st.column_config.TextColumn("Favorited By", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
-            "District": st.column_config.TextColumn("District", pinned=True, width="medium"),
-            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha)", format="%.2f"),
-            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag"),
+            "District": st.column_config.TextColumn("District", width="small"),
+            "Road Dist (km)": st.column_config.NumberColumn("Road Dist (km)", help=f"Road distance from {center_short}", format="%.1f km", width="small"),
+            "Drive Time": st.column_config.TextColumn("Drive Time", width="small"),
+            "Acres": st.column_config.NumberColumn("Acres", format="%.2f", width="small"),
+            "Total Bigha": st.column_config.NumberColumn("Bigha (UP)", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha)", format="%.2f", width="small"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98", width="medium"),
+            "Price/Acre (₹L)": st.column_config.NumberColumn("Price/Ac (₹L)", format="₹%.1f L", width="small"),
+            "Total (₹Cr)": st.column_config.NumberColumn("Total (₹Cr)", format="₹%.2f Cr", width="small"),
+            "Water TDS (ppm)": st.column_config.NumberColumn("TDS (ppm)", format="%d", width="small"),
+            "Due Diligence Score": st.column_config.NumberColumn("DD Score", format="%d", width="small"),
+            "Critique Risk Score": st.column_config.NumberColumn("Critique", format="%d/100", width="small"),
         }
-        st.dataframe(df_fav, use_container_width=True, column_config=fav_col_config, hide_index=True)
+        st.dataframe(df_fav, use_container_width=True, height=450, column_config=fav_col_config, hide_index=True)
 
         clr_c1, clr_c2 = st.columns(2)
         with clr_c1:

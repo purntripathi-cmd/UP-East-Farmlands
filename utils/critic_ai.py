@@ -166,9 +166,13 @@ def evaluate_property_critique(farm: Dict[str, Any]) -> Dict[str, Any]:
 
     govt_details = {
         "up_bhulekh_rtc": khatauni_clean,
+        "up_bhulekh_url": "https://upbhulekh.gov.in/public/public_ror/action/public_ror.jsp",
         "igrsup_barah_sala": igrsup_ref,
+        "igrsup_url": "https://igrsup.gov.in/igrsup/propertySearchAction",
         "jansunwai_status": jansunwai_ref,
+        "jansunwai_url": "https://jansunwai.up.nic.in/TrackComplaint",
         "groundwater_noc": cgwb_ref,
+        "groundwater_url": "https://upgroundwater.in/noc-status",
         "verification_summary": f"Verified on UP Bhulekh, IGRSUP Non-Encumbrance & CGRMS Portals (District {district})"
     }
 

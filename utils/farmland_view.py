@@ -82,8 +82,11 @@ def render_farmland_summary_card_html(
     drive_time = routing.get("driving_time_display", item.get("driving_time_from_kacheri_display", "N/A"))
     origin_name = routing.get("origin_name", "Kacheri Varanasi near Varuna Pul")
     
-    dir_url = routing.get("google_directions_url", item.get("google_maps_directions_url", "#"))
-    sat_url = routing.get("google_satellite_url", item.get("google_maps_satellite_url", "#"))
+    lat = float(item.get("lat", 25.3176))
+    lng = float(item.get("lng", 82.9739))
+    dir_url = routing.get("google_directions_url", item.get("google_maps_directions_url", f"https://www.google.com/maps/dir/?api=1&destination={lat:.6f},{lng:.6f}"))
+    sat_url = routing.get("google_satellite_url", f"https://maps.google.com/?q={lat:.6f},{lng:.6f}&t=k")
+    pin_url = routing.get("google_maps_pin_url", f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lng:.6f}")
     
     s_no_badge = f'<span style="background: #E0E7FF; color: #3730A3; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid #C7D2FE;">🏷️ S.No. #{serial_no}</span>' if serial_no is not None else ''
     
@@ -188,9 +191,10 @@ Tenure holder belongs to SC category. Official Collector / DM Sanction file regi
 <span style="color: #0284C7; font-size: 13px; font-weight: 600; margin-left: 4px;">(~{drive_time})</span>
 <div style="color: #64748B; font-size: 11px; margin-top: 3px;">From Reference Zero-Point: <b>{origin_name}</b></div>
 </div>
-<div style="display: flex; flex-wrap: wrap; gap: 8px; width: 100%;">
-<a href="{dir_url}" target="_blank" style="flex: 1 1 140px; min-height: 42px; background: #2563EB; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">🗺️ Google Turn-by-Turn ↗</a>
-<a href="{sat_url}" target="_blank" style="flex: 1 1 120px; min-height: 42px; background: #475569; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center;">🛰️ Satellite Pin ↗</a>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; width: 100%; margin-top: 6px;">
+<a href="{pin_url}" target="_blank" style="flex: 1 1 130px; min-height: 40px; background: #F0FDF4; color: #166534; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 5px; text-align: center; border: 1.5px solid #86EFAC; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">📍 Open in Google Maps ↗</a>
+<a href="{sat_url}" target="_blank" style="flex: 1 1 130px; min-height: 40px; background: #EFF6FF; color: #1D4ED8; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 5px; text-align: center; border: 1.5px solid #93C5FD; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">🛰️ Satellite Pin ↗</a>
+<a href="{dir_url}" target="_blank" style="flex: 1 1 150px; min-height: 40px; background: #FAF5FF; color: #6D28D9; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 5px; text-align: center; border: 1.5px solid #DDD6FE; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">🚗 Google Turn-by-Turn ↗</a>
 </div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; font-size: 11.5px;">
@@ -325,6 +329,16 @@ def render_critique_ai_card_html(item: Dict[str, Any]) -> str:
     feedbacks = critique["negative_feedbacks_list"]
     govt = critique["govt_site_details"]
 
+    lat = float(item.get("lat", 25.3176))
+    lng = float(item.get("lng", 82.9739))
+    gmaps_pin_url = f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lng:.6f}"
+    gmaps_sat_url = f"https://maps.google.com/?q={lat:.6f},{lng:.6f}&t=k"
+
+    bhulekh_url = govt.get("up_bhulekh_url", "https://upbhulekh.gov.in/public/public_ror/action/public_ror.jsp")
+    igrsup_url = govt.get("igrsup_url", "https://igrsup.gov.in/igrsup/propertySearchAction")
+    jansunwai_url = govt.get("jansunwai_url", "https://jansunwai.up.nic.in/TrackComplaint")
+    groundwater_url = govt.get("groundwater_url", "https://upgroundwater.in/noc-status")
+
     feedback_items_html = "".join([
         f'<div style="margin-bottom: 4px; color: #991B1B; font-size: 11.5px; line-height: 1.4;">• {fb}</div>'
         for fb in feedbacks
@@ -350,12 +364,33 @@ Score: {score}/100 ({badge})
 </div>
 </div>
 <div>
-<div style="color: #0284C7; font-weight: 800; font-size: 12px; margin-bottom: 4px;">🏛️ Government Portal Cross-Verification:</div>
-<div style="background: #F0F9FF; padding: 8px 12px; border-radius: 8px; font-size: 11px; color: #0369A1; line-height: 1.5; border-left: 4px solid #0284C7; border-top: 1px solid #BAE6FD; border-right: 1px solid #BAE6FD; border-bottom: 1px solid #BAE6FD;">
+<div style="color: #0284C7; font-weight: 800; font-size: 12px; margin-bottom: 4px;">🏛️ Government Portal Cross-Verification (Official Sources):</div>
+<div style="background: #F0F9FF; padding: 10px 12px; border-radius: 8px; font-size: 11.5px; color: #0369A1; line-height: 1.5; border-left: 4px solid #0284C7; border-top: 1px solid #BAE6FD; border-right: 1px solid #BAE6FD; border-bottom: 1px solid #BAE6FD;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
 <div>• <b style="color: #0F172A;">UP Bhulekh RTC:</b> {govt['up_bhulekh_rtc']}</div>
+<a href="{bhulekh_url}" target="_blank" style="background: #FFFFFF; color: #0284C7; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; border: 1px solid #BAE6FD; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">🔗 UP Bhulekh Source ↗</a>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
 <div>• <b style="color: #0F172A;">IGRSUP 12-Year:</b> {govt['igrsup_barah_sala']}</div>
+<a href="{igrsup_url}" target="_blank" style="background: #FFFFFF; color: #0284C7; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; border: 1px solid #BAE6FD; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">🔗 IGRSUP Registry Source ↗</a>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
 <div>• <b style="color: #0F172A;">CGRMS Grievance:</b> {govt['jansunwai_status']}</div>
+<a href="{jansunwai_url}" target="_blank" style="background: #FFFFFF; color: #0284C7; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; border: 1px solid #BAE6FD; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">🔗 Jansunwai Grievance Portal ↗</a>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
 <div>• <b style="color: #0F172A;">Groundwater NOC:</b> {govt['groundwater_noc']}</div>
+<a href="{groundwater_url}" target="_blank" style="background: #FFFFFF; color: #0284C7; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; border: 1px solid #BAE6FD; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">🔗 UPGWD NOC Registry ↗</a>
+</div>
+</div>
+</div>
+<div style="margin-top: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+<div style="font-size: 12px; color: #334155;">
+<b>📍 Specific Location:</b> <span style="color: #0F172A; font-weight: 700;">{lat:.5f}° N, {lng:.5f}° E</span> ({item.get('location', 'Farmland')})
+</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+<a href="{gmaps_pin_url}" target="_blank" style="background: #FFFFFF; color: #166534; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1.5px solid #86EFAC; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">📍 Open Specific Location in Google Maps ↗</a>
+<a href="{gmaps_sat_url}" target="_blank" style="background: #FFFFFF; color: #1D4ED8; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1.5px solid #93C5FD; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">🛰️ Satellite Pin ↗</a>
 </div>
 </div>
 </div>

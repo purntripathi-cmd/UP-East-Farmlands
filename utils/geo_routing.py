@@ -208,11 +208,14 @@ def get_google_maps_directions_url(dest_lat: float, dest_lng: float, origin_lat:
 
 
 def get_google_maps_satellite_search_url(lat: float, lng: float, query: str = "") -> str:
-    """Generates Google Maps direct search URL focused on parcel coordinates."""
-    if query:
-        encoded_q = query.replace(" ", "+")
-        return f"https://www.google.com/maps/search/?api=1&query={lat:.5f},{lng:.5f}+({encoded_q})"
-    return f"https://www.google.com/maps/search/?api=1&query={lat:.5f},{lng:.5f}"
+    """Generates official Google Maps satellite layer URL focused on parcel coordinates."""
+    # &t=k parameter forces Google Maps to load the high-resolution satellite imagery layer
+    return f"https://maps.google.com/?q={lat:.6f},{lng:.6f}&t=k"
+
+
+def get_google_maps_pin_url(lat: float, lng: float) -> str:
+    """Generates official Google Maps direct pin URL for specific parcel coordinates."""
+    return f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lng:.6f}"
 
 
 def assign_concentric_ring(aerial_km: float) -> str:
@@ -246,6 +249,7 @@ def compute_parcel_routing(
     driving_mins = estimate_driving_time_minutes(road_km)
     directions_url = get_google_maps_directions_url(dest_lat, dest_lng, origin_lat, origin_lng)
     satellite_url = get_google_maps_satellite_search_url(dest_lat, dest_lng, parcel.get("name", ""))
+    maps_pin_url = get_google_maps_pin_url(dest_lat, dest_lng)
     ring = assign_concentric_ring(aerial_km)
 
     # Format human-readable travel time
@@ -266,5 +270,6 @@ def compute_parcel_routing(
         "driving_time_display": time_str,
         "google_directions_url": directions_url,
         "google_satellite_url": satellite_url,
+        "google_maps_pin_url": maps_pin_url,
         "distance_ring": ring
     }

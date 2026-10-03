@@ -35,6 +35,7 @@ from utils.geo_routing import (
     estimate_driving_time_minutes,
     get_google_maps_directions_url,
     get_google_maps_satellite_search_url,
+    get_google_maps_pin_url,
     assign_concentric_ring,
     compute_parcel_routing,
     load_landmarks,
@@ -704,4 +705,65 @@ def test_streamlit_light_theme_and_white_header_config():
 
     assert 'header[data-testid="stHeader"]' in app_code
     assert 'div[data-testid="stTabs"]' in app_code
+
+
+def test_google_maps_satellite_and_pin_urls(sample_parcel):
+    """Verifies that satellite URL uses &t=k to avoid errors and that direct pin URL is generated."""
+    lat = float(sample_parcel["lat"])
+    lng = float(sample_parcel["lng"])
+    
+    sat_url = get_google_maps_satellite_search_url(lat, lng)
+    assert "&t=k" in sat_url
+    assert f"q={lat:.6f},{lng:.6f}" in sat_url
+    assert "+(" not in sat_url  # No invalid query syntax
+    
+    pin_url = get_google_maps_pin_url(lat, lng)
+    assert f"query={lat:.6f},{lng:.6f}" in pin_url
+    
+    routing = compute_parcel_routing(sample_parcel)
+    assert "google_satellite_url" in routing
+    assert "&t=k" in routing["google_satellite_url"]
+    assert "google_maps_pin_url" in routing
+
+    summary_html = render_farmland_summary_card_html(sample_parcel, routing)
+    assert "Open in Google Maps" in summary_html
+    assert "Satellite Pin" in summary_html
+    assert "Google Turn-by-Turn" in summary_html
+    # Ensure no dark button styling #475569
+    assert "background: #475569" not in summary_html
+
+
+def test_critique_ai_govt_portal_source_links_and_maps_locator(sample_parcel):
+    """Verifies that Critique AI renders official government portal verification links and Google Maps pin."""
+    critique_html = render_critique_ai_card_html(sample_parcel)
+    
+    # Official portal links must be present and clickable
+    assert "upbhulekh.gov.in" in critique_html
+    assert "igrsup.gov.in" in critique_html
+    assert "jansunwai.up.nic.in" in critique_html
+    assert "upgroundwater.in" in critique_html
+    assert "🔗 UP Bhulekh Source ↗" in critique_html
+    assert "🔗 IGRSUP Registry Source ↗" in critique_html
+    assert "🔗 Jansunwai Grievance Portal ↗" in critique_html
+    assert "🔗 UPGWD NOC Registry ↗" in critique_html
+
+    # Location launcher
+    assert "Open Specific Location in Google Maps ↗" in critique_html
+    assert "Satellite Pin ↗" in critique_html
+
+
+def test_table_column_header_text_wrapping_and_compact_headers():
+    """Verifies that app.py CSS enforces column header text wrapping and compact column names."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    # CSS text wrapping rules
+    assert "word-wrap: break-word" in app_code
+    assert "overflow-wrap: break-word" in app_code
+    assert "div[role=\"columnheader\"]" in app_code
+    
+    # Check that verbose headers like Road Distance from Kacheri Varanasi nea have been replaced with compact headers
+    assert '"Road Dist (km)"' in app_code
+
 
