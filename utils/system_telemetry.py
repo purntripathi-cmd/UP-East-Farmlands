@@ -89,23 +89,23 @@ def get_system_telemetry() -> Dict[str, Any]:
 
 
 def render_system_telemetry_html() -> str:
-    """Renders styled dark-theme HTML telemetry widget for the sidebar or footer."""
+    """Renders styled light-theme HTML telemetry widget for the sidebar or footer."""
     telemetry = get_system_telemetry()
     return f"""
-    <div style="background: #111827; border: 1px solid #1F2937; border-radius: 8px; padding: 10px 12px; margin-top: 14px; font-size: 11px; color: #9CA3AF; line-height: 1.5;">
-        <div style="color: #10B981; font-weight: 700; margin-bottom: 4px; display: flex; justify-content: space-between;">
+    <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 11.5px; color: #475569; line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <div style="color: #047857; font-weight: 800; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
             <span>⚡ Host & App Performance</span>
-            <span style="color: #6EE7B7;">● Online</span>
+            <span style="background: #DCFCE7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid #BBF7D0;">● Online</span>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-            <span>Process CPU: <b style="color: #F9FAFB;">{telemetry['app_cpu_pct']}%</b></span>
-            <span>Host CPU: <b style="color: #F9FAFB;">{telemetry['host_cpu_pct']}%</b> ({telemetry['cpu_cores']} cores)</span>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+            <span>Process CPU: <b style="color: #0F172A;">{telemetry['app_cpu_pct']}%</b></span>
+            <span>Host CPU: <b style="color: #0F172A;">{telemetry['host_cpu_pct']}%</b> ({telemetry['cpu_cores']} cores)</span>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-            <span>App RAM: <b style="color: #38BDF8;">{telemetry['app_rss_mb']} MB</b></span>
-            <span>Host RAM: <b style="color: #38BDF8;">{telemetry['host_available_ram_gb']}G / {telemetry['host_total_ram_gb']}G</b> ({telemetry['host_ram_used_pct']}%)</span>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+            <span>App RAM: <b style="color: #0284C7;">{telemetry['app_rss_mb']} MB</b></span>
+            <span>Host RAM: <b style="color: #0284C7;">{telemetry['host_available_ram_gb']}G / {telemetry['host_total_ram_gb']}G</b> ({telemetry['host_ram_used_pct']}%)</span>
         </div>
-        <div style="border-top: 1px solid #1F2937; padding-top: 4px; margin-top: 4px; font-size: 10px; color: #6B7280; display: flex; justify-content: space-between;">
+        <div style="border-top: 1px solid #E2E8F0; padding-top: 6px; margin-top: 6px; font-size: 10.5px; color: #64748B; display: flex; justify-content: space-between;">
             <span>Python {telemetry['python_version']} • {telemetry['os_platform'].split()[0]}</span>
             <span>Uptime: {telemetry['process_uptime']}</span>
         </div>

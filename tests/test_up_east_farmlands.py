@@ -240,11 +240,12 @@ def test_system_telemetry():
 def test_clean_html_and_no_code_blocks(sample_parcel):
     routing = compute_parcel_routing(sample_parcel)
     
-    summary_html = render_farmland_summary_card_html(sample_parcel, routing, is_fav=True)
+    summary_html = render_farmland_summary_card_html(sample_parcel, routing, is_fav=True, serial_no=7)
     # Ensure no leading whitespace on lines that would trigger Markdown 4-space code block
     for line in summary_html.splitlines():
         assert not line.startswith("    "), f"Indented line detected: {line}"
     assert "Actual Driving Road Distance" in summary_html
+    assert "S.No. #7" in summary_html
 
     critique_html = render_critique_ai_card_html(sample_parcel)
     assert "Independent Critique AI Risk Audit" in critique_html

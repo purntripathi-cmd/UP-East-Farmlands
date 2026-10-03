@@ -60,8 +60,8 @@ def _extract_crops_telemetry(item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, Any], is_fav: bool = False) -> str:
-    """Renders top summary card with road distance from active landmark, pricing, and size."""
+def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, Any], is_fav: bool = False, serial_no: Any = None) -> str:
+    """Renders top summary card with road distance from active landmark, pricing, size, and serial number correlation."""
     acres = item.get("size_acres", 0.0)
     pakka_bigha = round(acres * 1.60, 2)
     biswa = round(pakka_bigha * 20, 1)
@@ -77,58 +77,61 @@ def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, A
     
     dir_url = routing.get("google_directions_url", item.get("google_maps_directions_url", "#"))
     sat_url = routing.get("google_satellite_url", item.get("google_maps_satellite_url", "#"))
-    fav_badge = '<span style="background: #4C1D95; color: #DDD6FE; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin-top: 2px;">⭐ Shortlisted Favorite</span>' if is_fav else ''
+    
+    s_no_badge = f'<span style="background: #E0E7FF; color: #3730A3; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid #C7D2FE;">🏷️ S.No. #{serial_no}</span>' if serial_no is not None else ''
+    fav_badge = '<span style="background: #F3E8FF; color: #6B21A8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #DDD6FE;">⭐ Shortlisted Favorite</span>' if is_fav else ''
 
     raw_html = f"""
-<div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border: 1px solid #334155; border-radius: 10px; padding: 14px; margin-bottom: 14px; color: #F8FAFC;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 14px; color: #0F172A; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-<div style="flex: 1 1 240px;">
+<div style="flex: 1 1 260px;">
 <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px;">
-<span style="background: #065F46; color: #6EE7B7; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">{item.get('regional_district', 'Varanasi')} - {item.get('regional_state', 'UP')}</span>
-<span style="background: #1E3A8A; color: #93C5FD; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">{item.get('sourcing_tier_badge', '🏛️ Tier 1: Govt Registry')}</span>
-<span style="background: #0284C7; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">{dist_ring}</span>
+{s_no_badge}
+<span style="background: #DCFCE7; color: #166534; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BBF7D0;">{item.get('regional_district', 'Varanasi')} • {item.get('regional_state', 'UP')}</span>
+<span style="background: #DBEAFE; color: #1E40AF; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BFDBFE;">{item.get('sourcing_tier_badge', '🏛️ Tier 1: Govt Registry')}</span>
+<span style="background: #E0F2FE; color: #0369A1; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BAE6FD;">{dist_ring}</span>
 {fav_badge}
 </div>
-<h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #F8FAFC; line-height: 1.3;">{item.get('name', 'Farmland Estate')}</h2>
-<div style="color: #94A3B8; font-size: 12px; margin-top: 3px;">📍 {item.get('location', '')}</div>
+<h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; line-height: 1.3;">{item.get('name', 'Farmland Estate')}</h2>
+<div style="color: #64748B; font-size: 12.5px; margin-top: 3px;">📍 {item.get('location', '')}</div>
 </div>
 <div style="text-align: right; min-width: 140px;">
-<div style="font-size: 22px; font-weight: 800; color: #34D399;">₹{total_cr} Cr</div>
-<div style="color: #6EE7B7; font-size: 12px; font-weight: 600;">₹{price_acre} Lakhs / Acre</div>
+<div style="font-size: 24px; font-weight: 800; color: #047857;">₹{total_cr} Cr</div>
+<div style="color: #059669; font-size: 12.5px; font-weight: 700;">₹{price_acre} Lakhs / Acre</div>
 </div>
 </div>
-<div style="background: #0B1329; border: 1px solid #1E3A8A; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-<div style="flex: 1 1 200px;">
-<span style="color: #60A5FA; font-weight: 700; font-size: 12px;">🚗 Actual Driving Road Distance:</span>
-<span style="color: #F8FAFC; font-weight: 800; font-size: 15px; margin-left: 4px;">{road_km} km</span>
-<span style="color: #93C5FD; font-size: 12px; margin-left: 4px;">(~{drive_time})</span>
-<div style="color: #64748B; font-size: 10px; margin-top: 2px;">From: <b>{origin_name}</b></div>
+<div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+<div style="flex: 1 1 220px;">
+<span style="color: #0284C7; font-weight: 700; font-size: 13px;">🚗 Actual Driving Road Distance:</span>
+<span style="color: #0F172A; font-weight: 800; font-size: 16px; margin-left: 4px;">{road_km} km</span>
+<span style="color: #0284C7; font-size: 13px; font-weight: 600; margin-left: 4px;">(~{drive_time})</span>
+<div style="color: #64748B; font-size: 11px; margin-top: 3px;">From Reference Zero-Point: <b>{origin_name}</b></div>
 </div>
-<div style="display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">
-<a href="{dir_url}" target="_blank" style="flex: 1 1 140px; min-height: 42px; background: #2563EB; color: white; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center;">🗺️ Google Turn-by-Turn ↗</a>
-<a href="{sat_url}" target="_blank" style="flex: 1 1 120px; min-height: 42px; background: #475569; color: white; padding: 8px 10px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center;">🛰️ Satellite Pin ↗</a>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; width: 100%;">
+<a href="{dir_url}" target="_blank" style="flex: 1 1 140px; min-height: 42px; background: #2563EB; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">🗺️ Google Turn-by-Turn ↗</a>
+<a href="{sat_url}" target="_blank" style="flex: 1 1 120px; min-height: 42px; background: #475569; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-align: center;">🛰️ Satellite Pin ↗</a>
 </div>
 </div>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; font-size: 11px;">
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
-<div style="color: #94A3B8;">Acreage</div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{acres:.2f} Acres</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; font-size: 11.5px;">
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<div style="color: #64748B; font-weight: 600;">Acreage</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px; margin-top: 2px;">{acres:.2f} Acres</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
-<div style="color: #94A3B8;">Purvanchal Bigha</div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{pakka_bigha:.2f} Bigha</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<div style="color: #64748B; font-weight: 600;">Purvanchal Bigha</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px; margin-top: 2px;">{pakka_bigha:.2f} Bigha</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
-<div style="color: #94A3B8;">Biswa</div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{biswa:.1f} Biswa</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<div style="color: #64748B; font-weight: 600;">Biswa / Kattha</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px; margin-top: 2px;">{biswa:.1f} Biswa</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
-<div style="color: #94A3B8;">Metric Area</div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{sq_m:,} m²</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<div style="color: #64748B; font-weight: 600;">Metric Area</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px; margin-top: 2px;">{sq_m:,} m²</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155;">
-<div style="color: #94A3B8;">Elevation</div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{item.get('elevation_m', 78)}m MSL</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<div style="color: #64748B; font-weight: 600;">Elevation</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px; margin-top: 2px;">{item.get('elevation_m', 78)}m MSL</div>
 </div>
 </div>
 </div>
@@ -137,45 +140,45 @@ def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, A
 
 
 def render_agronomic_telemetry_html(item: Dict[str, Any]) -> str:
-    """Renders agronomic and soil telemetry."""
+    """Renders agronomic and soil telemetry in a clean light theme."""
     supp = _extract_crops_telemetry(item)
     tds = item.get("water_tds_ppm", 220)
-    tds_color = "#34D399" if tds < 250 else "#FBBF24"
-    drip_badge = '<span style="color: #34D399; font-weight: 700;">✅ Operational</span>' if item.get("drip_irrigation_installed") else '<span style="color: #F59E0B;">⚡ Canal / Flood</span>'
+    tds_color = "#047857" if tds < 250 else "#B45309"
+    drip_badge = '<span style="color: #047857; font-weight: 700;">✅ Operational</span>' if item.get("drip_irrigation_installed") else '<span style="color: #B45309;">⚡ Canal / Flood</span>'
 
     raw_html = f"""
-<div style="background: #0F172A; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; color: #F8FAFC;">
-<h3 style="margin: 0 0 8px 0; font-size: 14px; color: #38BDF8; display: flex; align-items: center; gap: 6px;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-bottom: 12px; color: #0F172A; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
+<h3 style="margin: 0 0 10px 0; font-size: 15px; color: #0284C7; font-weight: 800; display: flex; align-items: center; gap: 6px;">
 🌾 Agronomic Profile & Water Security
 </h3>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 11px; margin-bottom: 8px;">
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px;">
-<span style="color: #94A3B8;">Soil Type:</span>
-<div style="color: #F8FAFC; font-weight: 600; margin-top: 2px;">{item.get('soil_type', 'Gangetic Silt Loam')}</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 11.5px; margin-bottom: 10px;">
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<span style="color: #64748B; font-weight: 600;">Soil Type:</span>
+<div style="color: #0F172A; font-weight: 700; margin-top: 2px;">{item.get('soil_type', 'Gangetic Silt Loam')}</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px;">
-<span style="color: #94A3B8;">Soil pH & OC:</span>
-<div style="color: #F8FAFC; font-weight: 600; margin-top: 2px;">pH {item.get('soil_ph', 7.4)} • OC {item.get('organic_carbon_pct', 0.85)}%</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<span style="color: #64748B; font-weight: 600;">Soil pH & OC:</span>
+<div style="color: #0F172A; font-weight: 700; margin-top: 2px;">pH {item.get('soil_ph', 7.4)} • OC {item.get('organic_carbon_pct', 0.85)}%</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px;">
-<span style="color: #94A3B8;">Water Source:</span>
-<div style="color: #F8FAFC; font-weight: 600; margin-top: 2px;">{item.get('water_source', 'Deep Aquifer Borewell')}</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<span style="color: #64748B; font-weight: 600;">Water Source:</span>
+<div style="color: #0F172A; font-weight: 700; margin-top: 2px;">{item.get('water_source', 'Deep Aquifer Borewell')}</div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px;">
-<span style="color: #94A3B8;">Water Salinity TDS:</span>
-<div style="color: {tds_color}; font-weight: 700; margin-top: 2px;">{tds} ppm (Sweet Aquifer)</div>
+<div style="background: #F8FAFC; padding: 8px 10px; border-radius: 8px; border: 1px solid #E2E8F0;">
+<span style="color: #64748B; font-weight: 600;">Water Salinity TDS:</span>
+<div style="color: {tds_color}; font-weight: 800; margin-top: 2px;">{tds} ppm (Sweet Aquifer)</div>
 </div>
 </div>
-<div style="background: #1E293B; padding: 8px 10px; border-radius: 6px; font-size: 11px; margin-bottom: 8px;">
-<div style="color: #38BDF8; font-weight: 700; margin-bottom: 3px;">🌱 Crop Suitability Matrix</div>
-<div><b style="color: #34D399;">High-Value:</b> {supp.get('high_value_crops', 'N/A')}</div>
-<div style="margin-top: 2px;"><b style="color: #FBBF24;">Horticulture:</b> {supp.get('horticulture_fruits', 'N/A')}</div>
-<div style="margin-top: 2px;"><b style="color: #94A3B8;">Staples:</b> {supp.get('cash_crops_staples', 'N/A')}</div>
-<div style="margin-top: 4px; font-size: 11px; color: #A7F3D0;"><b>Est. Annual Commercial Yield:</b> ₹{item.get('annual_agro_yield_estimate_lakhs', 12.0)} L/Yr</div>
+<div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
+<div style="color: #166534; font-weight: 800; margin-bottom: 4px;">🌱 Crop Suitability Matrix</div>
+<div><b style="color: #047857;">High-Value:</b> {supp.get('high_value_crops', 'N/A')}</div>
+<div style="margin-top: 3px;"><b style="color: #B45309;">Horticulture:</b> {supp.get('horticulture_fruits', 'N/A')}</div>
+<div style="margin-top: 3px;"><b style="color: #334155;">Staples:</b> {supp.get('cash_crops_staples', 'N/A')}</div>
+<div style="margin-top: 6px; font-size: 11.5px; color: #166534; border-top: 1px dashed #BBF7D0; padding-top: 4px;"><b>Est. Annual Commercial Yield:</b> ₹{item.get('annual_agro_yield_estimate_lakhs', 12.0)} L/Yr</div>
 </div>
-<div style="display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; padding-top: 4px; border-top: 1px solid #334155;">
-<span>Drip: {drip_badge}</span>
-<span>Power: <b style="color: #F8FAFC;">{item.get('power_supply', '3-Phase Agro Line')}</b></span>
+<div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748B; padding-top: 6px; border-top: 1px solid #E2E8F0;">
+<span>Drip Irrigation: {drip_badge}</span>
+<span>Power: <b style="color: #0F172A;">{item.get('power_supply', '3-Phase Dedicated Line')}</b></span>
 </div>
 </div>
 """
@@ -183,9 +186,10 @@ def render_agronomic_telemetry_html(item: Dict[str, Any]) -> str:
 
 
 def render_legal_and_news_card_html(item: Dict[str, Any]) -> str:
-    """Renders 100-point legal audit along with verified published news clipping."""
+    """Renders 100-point legal audit along with verified published news clipping in a clean light theme."""
     score = item.get("due_diligence_score", 90)
-    score_color = "#10B981" if score >= 90 else "#38BDF8" if score >= 80 else "#F59E0B"
+    score_color = "#047857" if score >= 90 else "#0284C7" if score >= 80 else "#B45309"
+    score_bg = "#DCFCE7" if score >= 90 else "#DBEAFE" if score >= 80 else "#FEF3C7"
     
     news_title = item.get("published_news_title", "UP Bhulekh Section 34 Clean Title Gazette")
     news_source = item.get("published_news_source", "Dainik Jagran Varanasi Edition")
@@ -194,33 +198,33 @@ def render_legal_and_news_card_html(item: Dict[str, Any]) -> str:
     notice_type = item.get("notice_or_legal_type", "30-Day Title Caveat Cleared")
 
     raw_html = f"""
-<div style="background: #0F172A; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; color: #F8FAFC;">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
-<h3 style="margin: 0; font-size: 14px; color: #10B981; display: flex; align-items: center; gap: 6px;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-bottom: 12px; color: #0F172A; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
+<h3 style="margin: 0; font-size: 15px; color: #059669; font-weight: 800; display: flex; align-items: center; gap: 6px;">
 🛡️ Legal Due Diligence Audit
 </h3>
-<span style="background: #064E3B; color: {score_color}; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 4px;">
+<span style="background: {score_bg}; color: {score_color}; font-weight: 800; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; border: 1px solid {score_color}33;">
 Score: {score}/100 ({item.get('due_diligence_grade', 'A+ Sovereign')})
 </span>
 </div>
-<div style="background: #78350F; border: 1px solid #B45309; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; flex-wrap: wrap; gap: 4px;">
-<span style="color: #FDE68A; font-weight: 700; font-size: 11px;">📰 NOTICE: {news_source}</span>
-<span style="background: #451A03; color: #FDE68A; padding: 2px 6px; border-radius: 4px; font-size: 10px;">{notice_type}</span>
+<div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
+<span style="color: #B45309; font-weight: 800; font-size: 12px;">📰 NOTICE: {news_source}</span>
+<span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #FCD34D;">{notice_type}</span>
 </div>
-<div style="color: #FEF3C7; font-weight: 600; font-size: 12px; line-height: 1.3;">{news_title}</div>
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; flex-wrap: wrap; gap: 6px;">
-<span style="color: #D97706;">Date: {news_date}</span>
-<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 3px 8px; border-radius: 4px; text-decoration: none; font-weight: 700; min-height: 32px; display: inline-flex; align-items: center;">Verify Link ↗</a>
+<div style="color: #78350F; font-weight: 700; font-size: 13px; line-height: 1.3;">{news_title}</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11.5px; flex-wrap: wrap; gap: 6px;">
+<span style="color: #92400E;">Date: {news_date}</span>
+<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 32px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(217,119,6,0.3);">Verify Link ↗</a>
 </div>
 </div>
-<div style="font-size: 11px; color: #94A3B8; margin-bottom: 6px;">
-<div><b>Khatauni / Khasra:</b> {item.get('khasra_khatauni_number', 'Khatauni Verified')}</div>
-<div style="margin-top: 2px;"><b>Title:</b> {item.get('title_status', 'Freehold Clear Title')} ({item.get('revenue_record_type', 'UP Bhulekh Certified')})</div>
-<div style="margin-top: 2px;"><b>Farmhouse:</b> {item.get('farmhouse_permission', 'Permitted')}</div>
-<div style="margin-top: 2px;"><b>Road Access:</b> {item.get('road_approach', '18-ft Bitumen Road')} • {item.get('fencing', 'Chain-Link')}</div>
+<div style="font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
+<div><b>Khatauni / Khasra:</b> <span style="color: #0F172A;">{item.get('khasra_khatauni_number', 'Khatauni Verified')}</span></div>
+<div><b>Title:</b> <span style="color: #0F172A;">{item.get('title_status', 'Freehold Clear Title')} ({item.get('revenue_record_type', 'UP Bhulekh Certified')})</span></div>
+<div><b>Farmhouse:</b> <span style="color: #0F172A;">{item.get('farmhouse_permission', 'Permitted')}</span></div>
+<div><b>Road Access:</b> <span style="color: #0F172A;">{item.get('road_approach', '18-ft Bitumen Road')} • {item.get('fencing', 'Chain-Link')}</span></div>
 </div>
-<div style="background: #1E293B; padding: 6px 8px; border-radius: 6px; font-size: 11px; color: #34D399;">
+<div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #047857;">
 {item.get('due_diligence_verdict', '🟢 Ready to Register — Bankable & clear title')}
 </div>
 </div>
@@ -229,7 +233,7 @@ Score: {score}/100 ({item.get('due_diligence_grade', 'A+ Sovereign')})
 
 
 def render_critique_ai_card_html(item: Dict[str, Any]) -> str:
-    """Renders Independent Critique AI risk audit, negative feedback summary, and govt site records."""
+    """Renders Independent Critique AI risk audit, negative feedback summary, and govt site records in clean light theme."""
     critique = evaluate_property_critique(item)
     score = critique["critique_risk_score"]
     badge = critique["critique_verdict_badge"]
@@ -239,36 +243,36 @@ def render_critique_ai_card_html(item: Dict[str, Any]) -> str:
     govt = critique["govt_site_details"]
 
     feedback_items_html = "".join([
-        f'<div style="margin-bottom: 4px; color: #E2E8F0; font-size: 11px; line-height: 1.4;">{fb}</div>'
+        f'<div style="margin-bottom: 4px; color: #991B1B; font-size: 11.5px; line-height: 1.4;">• {fb}</div>'
         for fb in feedbacks
     ])
 
     raw_html = f"""
-<div style="background: #0B132B; border: 1px solid #1E3A8A; border-radius: 8px; padding: 12px; margin-bottom: 12px; color: #F8FAFC;">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
-<h3 style="margin: 0; font-size: 14px; color: #60A5FA; display: flex; align-items: center; gap: 6px;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-bottom: 12px; color: #0F172A; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
+<h3 style="margin: 0; font-size: 15px; color: #DC2626; font-weight: 800; display: flex; align-items: center; gap: 6px;">
 🤖 Independent Critique AI Risk Audit & Negative Feedbacks
 </h3>
-<span style="background: #172554; color: {color}; font-weight: 800; font-size: 12px; padding: 2px 8px; border-radius: 4px; border: 1px solid {color};">
+<span style="background: #FEF2F2; color: #B91C1C; font-weight: 800; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; border: 1px solid #FECACA;">
 Score: {score}/100 ({badge})
 </span>
 </div>
-<div style="background: #1E293B; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: {color}; margin-bottom: 8px;">
+<div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 10px;">
 {verdict}
 </div>
-<div style="margin-bottom: 8px;">
-<div style="color: #F87171; font-weight: 700; font-size: 11px; margin-bottom: 3px;">⚠️ Identified Caveats & Village Advisories:</div>
-<div style="background: #111827; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #EF4444;">
+<div style="margin-bottom: 10px;">
+<div style="color: #DC2626; font-weight: 800; font-size: 12px; margin-bottom: 4px;">⚠️ Identified Caveats & Village Advisories:</div>
+<div style="background: #FEF2F2; padding: 8px 12px; border-radius: 8px; border-left: 4px solid #EF4444; border-top: 1px solid #FECACA; border-right: 1px solid #FECACA; border-bottom: 1px solid #FECACA;">
 {feedback_items_html}
 </div>
 </div>
 <div>
-<div style="color: #38BDF8; font-weight: 700; font-size: 11px; margin-bottom: 3px;">🏛️ Government Portal Cross-Verification:</div>
-<div style="background: #111827; padding: 6px 10px; border-radius: 6px; font-size: 10px; color: #94A3B8; line-height: 1.4; border-left: 3px solid #0284C7;">
-<div>• <b style="color: #E2E8F0;">UP Bhulekh RTC:</b> {govt['up_bhulekh_rtc']}</div>
-<div>• <b style="color: #E2E8F0;">IGRSUP 12-Year:</b> {govt['igrsup_barah_sala']}</div>
-<div>• <b style="color: #E2E8F0;">CGRMS Grievance:</b> {govt['jansunwai_status']}</div>
-<div>• <b style="color: #E2E8F0;">Groundwater NOC:</b> {govt['groundwater_noc']}</div>
+<div style="color: #0284C7; font-weight: 800; font-size: 12px; margin-bottom: 4px;">🏛️ Government Portal Cross-Verification:</div>
+<div style="background: #F0F9FF; padding: 8px 12px; border-radius: 8px; font-size: 11px; color: #0369A1; line-height: 1.5; border-left: 4px solid #0284C7; border-top: 1px solid #BAE6FD; border-right: 1px solid #BAE6FD; border-bottom: 1px solid #BAE6FD;">
+<div>• <b style="color: #0F172A;">UP Bhulekh RTC:</b> {govt['up_bhulekh_rtc']}</div>
+<div>• <b style="color: #0F172A;">IGRSUP 12-Year:</b> {govt['igrsup_barah_sala']}</div>
+<div>• <b style="color: #0F172A;">CGRMS Grievance:</b> {govt['jansunwai_status']}</div>
+<div>• <b style="color: #0F172A;">Groundwater NOC:</b> {govt['groundwater_noc']}</div>
 </div>
 </div>
 </div>
@@ -284,18 +288,19 @@ def render_seller_contact_card_html(item: Dict[str, Any]) -> str:
     wa_link = f"https://wa.me/{clean_p}?text=Interested%20in%20{item.get('name', 'Farmland').replace(' ', '%20')}"
 
     raw_html = f"""
-<div style="background: #111827; border: 1px solid #1F2937; border-radius: 8px; padding: 12px; margin-top: 8px;">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
 <div>
-<div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">{person}</div>
-<div style="color: #94A3B8; font-size: 11px;">{item.get('seller_category', 'Direct Landowner / Farmer')}</div>
+<div style="color: #0F172A; font-weight: 800; font-size: 14px;">{person}</div>
+<div style="color: #64748B; font-size: 11.5px; font-weight: 600;">{item.get('seller_category', 'Direct Landowner / Farmer')}</div>
 </div>
-<div style="color: #38BDF8; font-weight: 700; font-size: 13px;">{phone}</div>
+<div style="color: #0284C7; font-weight: 800; font-size: 14px;">{phone}</div>
 </div>
 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-<a href="tel:{clean_p}" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #2563EB; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">📞 Call Seller</a>
-<a href="{wa_link}" target="_blank" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #059669; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">💬 WhatsApp Chat</a>
+<a href="tel:{clean_p}" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #2563EB; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">📞 Call Seller</a>
+<a href="{wa_link}" target="_blank" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #059669; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(5,150,105,0.3);">💬 WhatsApp Chat</a>
 </div>
 </div>
 """
     return clean_html(raw_html)
+

@@ -69,44 +69,78 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling for Professional Institutional Aesthetics, Mobile Responsiveness, and Permanent Wide Sidebar
+# Custom Styling for Professional Institutional Aesthetics, Mobile Responsiveness, Permanent Wide Sidebar & Colored Sticky Tabs
 st.markdown("""
 <style>
-    .main {
-        background-color: #0B1120;
+    /* Global White Background & Clean Institutional Theme */
+    .stApp, .main, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"] {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
     }
-    .stMetric {
-        background: #1E293B;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid #334155;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 19px;
-        font-weight: 700;
-        color: #10B981;
-    }
-    div[data-testid="stMetricLabel"] {
-        color: #94A3B8;
-        font-size: 11px;
+    body {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
     .block-container {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
+        padding-top: 1rem !important;
+        padding-bottom: 2.5rem !important;
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Clean Dark Headings & Readable Text */
+    h1, h2, h3, h4, h5, h6 {
+        color: #0F172A !important;
+        font-weight: 700 !important;
+    }
+    p, span, label {
+        color: #334155 !important;
     }
 
-    /* Left Panel (Sidebar): Visible always, slightly wider (375px) */
+    /* Top KPI Metric Cards */
+    .stMetric {
+        background: #FFFFFF !important;
+        padding: 12px 14px !important;
+        border-radius: 10px !important;
+        border: 1.5px solid #E2E8F0 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #047857 !important;
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #64748B !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    div[data-testid="stMetricDelta"] {
+        font-size: 11px !important;
+        color: #059669 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Left Panel (Sidebar): Visible always, slightly wider (375px), clean light institutional theme */
     section[data-testid="stSidebar"] {
         min-width: 360px !important;
         max-width: 400px !important;
         width: 375px !important;
-        background-color: #0F172A !important;
-        border-right: 1px solid #1E293B !important;
+        background-color: #F8FAFC !important;
+        border-right: 1px solid #E2E8F0 !important;
+        color: #0F172A !important;
     }
     section[data-testid="stSidebar"] > div {
         padding-top: 1.2rem !important;
         padding-left: 1.1rem !important;
         padding-right: 1.1rem !important;
+    }
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3 {
+        color: #0F172A !important;
     }
 
     /* Keep left sidebar visible on desktop and tablet without auto-collapsing */
@@ -122,6 +156,175 @@ st.markdown("""
         [data-testid="stSidebarHeader"] > button {
             display: none !important;
         }
+    }
+
+    /* ============================================================
+       PERMANENTLY VISIBLE TABS WITH DISTINCT COLORED TILES
+       ============================================================ */
+    /* Sticky Container for Tabs: stays pinned at top when scrolling, wraps comfortably without hiding behind overflow arrows */
+    div[data-testid="stTabs"] > div:first-child,
+    div[data-baseweb="tab-list"] {
+        position: sticky !important;
+        top: 0px !important;
+        z-index: 9999 !important;
+        background-color: #FFFFFF !important;
+        padding: 10px 4px 12px 4px !important;
+        border-bottom: 2px solid #E2E8F0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        overflow: visible !important;
+        width: 100% !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04) !important;
+    }
+    /* Hide scroll arrow buttons and default active underline bar */
+    button[data-baseweb="tab-scroll-backward"],
+    button[data-baseweb="tab-scroll-forward"],
+    div[data-baseweb="tab-border"],
+    div[data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    /* General Tab Tile Styling */
+    button[data-testid="stTab"],
+    div[data-baseweb="tab-list"] > button {
+        border-radius: 10px !important;
+        padding: 8px 16px !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        border: 1.5px solid transparent !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+    button[data-testid="stTab"]:hover,
+    div[data-baseweb="tab-list"] > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 8px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+    button[data-testid="stTab"] p,
+    div[data-baseweb="tab-list"] > button p {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1.3 !important;
+    }
+    button[data-testid="stTab"][aria-selected="true"] p,
+    button[data-testid="stTab"][aria-selected="true"] span,
+    button[data-testid="stTab"][aria-selected="true"] div,
+    div[data-baseweb="tab-list"] > button[aria-selected="true"] p {
+        color: #FFFFFF !important;
+        font-weight: 800 !important;
+    }
+
+    /* Tab 1: 🗺️ Interactive Google Map & Search (Royal Blue Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(1),
+    button[data-testid="stTab"]:nth-of-type(1) {
+        background-color: #EFF6FF !important;
+        border-color: #93C5FD !important;
+        color: #1D4ED8 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(1):hover {
+        background-color: #DBEAFE !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(1)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(1)[aria-selected="true"] {
+        background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%) !important;
+        border-color: #1E40AF !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+    }
+
+    /* Tab 2: 🔍 Detailed Farmland Telemetry & Dossier (Cyan / Teal Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(2),
+    button[data-testid="stTab"]:nth-of-type(2) {
+        background-color: #ECFEFF !important;
+        border-color: #A5F3FC !important;
+        color: #0E7490 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(2):hover {
+        background-color: #CFFAFE !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(2)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(2)[aria-selected="true"] {
+        background: linear-gradient(135deg, #0E7490 0%, #0891B2 100%) !important;
+        border-color: #155E75 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.35) !important;
+    }
+
+    /* Tab 3: 📊 Master Farmland Comparison Ledger (Purple / Violet Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(3),
+    button[data-testid="stTab"]:nth-of-type(3) {
+        background-color: #F5F3FF !important;
+        border-color: #DDD6FE !important;
+        color: #6D28D9 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(3):hover {
+        background-color: #EDE9FE !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(3)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(3)[aria-selected="true"] {
+        background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%) !important;
+        border-color: #5B21B6 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35) !important;
+    }
+
+    /* Tab 4: 📰 Published News & Caveat Notices (Warm Amber / Gold Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(4),
+    button[data-testid="stTab"]:nth-of-type(4) {
+        background-color: #FFFBEB !important;
+        border-color: #FDE68A !important;
+        color: #B45309 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(4):hover {
+        background-color: #FEF3C7 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(4)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(4)[aria-selected="true"] {
+        background: linear-gradient(135deg, #B45309 0%, #D97706 100%) !important;
+        border-color: #92400E !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35) !important;
+    }
+
+    /* Tab 5: ⭐ Shortlisted Favorites Matrix (Rose / Ruby Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(5),
+    button[data-testid="stTab"]:nth-of-type(5) {
+        background-color: #FFF1F2 !important;
+        border-color: #FECDD3 !important;
+        color: #BE123C !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(5):hover {
+        background-color: #FFE4E6 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(5)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(5)[aria-selected="true"] {
+        background: linear-gradient(135deg, #BE123C 0%, #E11D48 100%) !important;
+        border-color: #9F1239 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35) !important;
+    }
+
+    /* Tab 6: 📥 Export Center (Excel / CSV) (Emerald / Jade Tile) */
+    div[data-baseweb="tab-list"] > button:nth-of-type(6),
+    button[data-testid="stTab"]:nth-of-type(6) {
+        background-color: #ECFDF5 !important;
+        border-color: #A7F3D0 !important;
+        color: #047857 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(6):hover {
+        background-color: #D1FAE5 !important;
+    }
+    div[data-baseweb="tab-list"] > button:nth-of-type(6)[aria-selected="true"],
+    button[data-testid="stTab"]:nth-of-type(6)[aria-selected="true"] {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+        border-color: #065F46 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;
     }
 
     /* Modern Mobile Responsive Layout */
@@ -151,13 +354,11 @@ st.markdown("""
         h3 {
             font-size: 1.05rem !important;
         }
-        /* Mobile touch targets with min 44px ergonomics */
         button[kind="primary"], button[kind="secondary"], .stButton > button {
             min-height: 44px !important;
             font-size: 13px !important;
-            border-radius: 6px !important;
+            border-radius: 8px !important;
         }
-        /* Horizontal scroll for wide dataframes */
         div[data-testid="stDataFrame"] {
             width: 100% !important;
             overflow-x: auto !important;
@@ -738,7 +939,10 @@ with view_tabs[0]:
     # -------------------------------------------------------------
     st.markdown("---")
     st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
-    st.caption(f"Showing **{len(display_parcels)}** properties matching filters. All road driving distances and driving times are calculated from **{active_lm['name']}**.")
+    st.caption(
+        f"Showing **{len(display_parcels)}** properties matching filters. All road driving distances and driving times are calculated from **{active_lm['name']}**.\n\n"
+        f"💡 **Correlation Guide:** Each property's **S.No. (#1, #2, #3...)** corresponds directly to the property dropdown in **Tab 2 (🔍 Detailed Farmland Telemetry & Dossier)** for effortless cross-referencing."
+    )
 
     if display_parcels:
         tab1_rows = []
@@ -786,21 +990,37 @@ with view_tabs[1]:
     st.markdown("### 🔍 Detailed Farmland Telemetry, Critique AI & Legal Audit")
     st.caption("Inspect complete dossiers with soil parameters, groundwater TDS, independent critique risk findings, and UP Bhulekh verified records.")
 
-    if filtered_parcels:
-        farm_names = [f"{p['name']} ({routings[str(p['id'])]['road_km']} km | ₹{p['price_per_acre_lakhs']}L/Acre)" for p in filtered_parcels]
+    # Align target parcels with Tab 1 display parcels
+    target_parcels = display_parcels if display_parcels else filtered_parcels
+
+    if target_parcels:
+        farm_names = [
+            f"#{idx + 1}. {p['name']} — {p.get('regional_district', '')} ({routings.get(str(p['id']), {}).get('road_km', 0.0)} km from {center_short} | ₹{p.get('price_per_acre_lakhs')}L/Acre)"
+            for idx, p in enumerate(target_parcels)
+        ]
+        
+        saved_idx = st.session_state.get("tab2_selected_idx", 0)
+        if saved_idx >= len(target_parcels):
+            saved_idx = 0
+            
         selected_farm_idx = st.selectbox(
-            "Select Farmland to Inspect Full Dossier:",
-            options=range(len(filtered_parcels)),
+            "📌 Select Farmland by Serial Number (S.No. matches Tab 1 Table exactly):",
+            options=range(len(target_parcels)),
+            index=saved_idx,
             format_func=lambda i: farm_names[i],
             key="tab2_farm_selector"
         )
-        active_farm = filtered_parcels[selected_farm_idx]
+        st.session_state["tab2_selected_idx"] = selected_farm_idx
+
+        active_farm = target_parcels[selected_farm_idx]
         active_pid = str(active_farm["id"])
         active_routing = routings[active_pid]
         is_fav = is_favorite(active_pid, st.session_state["favorites"])
 
+        st.markdown(f"#### 🏷️ Property Dossier: #{selected_farm_idx + 1}. {active_farm.get('name')} ({active_farm.get('regional_district')})")
+
         # Favorite Toggle Button
-        fav_col1, fav_col2 = st.columns([1, 4])
+        fav_col1, fav_col2 = st.columns([1.5, 3.5])
         with fav_col1:
             fav_btn_label = "★ Remove from Favorites" if is_fav else "☆ Add to Favorites"
             if st.button(fav_btn_label, key=f"fav_btn_tab2_{active_pid}", use_container_width=True):
@@ -812,8 +1032,8 @@ with view_tabs[1]:
             if is_fav:
                 st.success("⭐ This farmland is in your Shortlisted Favorites!")
 
-        # 1. Top Summary Card (Clean HTML rendering)
-        render_html_block(render_farmland_summary_card_html(active_farm, active_routing, is_fav))
+        # 1. Top Summary Card (Clean HTML rendering with matching Serial Number)
+        render_html_block(render_farmland_summary_card_html(active_farm, active_routing, is_fav, serial_no=selected_farm_idx + 1))
 
         # 2. Split Columns: Agronomics & Legal/News
         col_agri, col_legal = st.columns([1.5, 1.5])
@@ -896,18 +1116,18 @@ with view_tabs[3]:
             notice_type = p.get("notice_or_legal_type")
 
             news_card_html = f"""
-<div style="background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
-<span style="color: #FBBF24; font-weight: 700; font-size: 13px;">📰 {news_src}</span>
-<span style="background: #451A03; color: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 11px;">{notice_type}</span>
+<span style="color: #B45309; font-weight: 800; font-size: 13px;">📰 {news_src}</span>
+<span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #FCD34D;">{notice_type}</span>
 </div>
-<div style="color: #F8FAFC; font-weight: 600; font-size: 14px; margin-bottom: 4px;">{news_title}</div>
-<div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">
+<div style="color: #0F172A; font-weight: 700; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">{news_title}</div>
+<div style="font-size: 12.5px; color: #475569; margin-bottom: 10px;">
 <b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {center_short}
 </div>
-<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; flex-wrap: wrap; gap: 6px;">
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; flex-wrap: wrap; gap: 6px;">
 <span style="color: #64748B;">Published Date: {news_date}</span>
-<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 600; min-height: 40px; display: inline-flex; align-items: center;">Verify Original Publication ↗</a>
+<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 36px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(217,119,6,0.3);">Verify Original Publication ↗</a>
 </div>
 </div>
 """
