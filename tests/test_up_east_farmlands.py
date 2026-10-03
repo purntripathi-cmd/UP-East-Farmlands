@@ -854,4 +854,123 @@ def test_top_text_visibility_and_sidebar_flex_css():
     assert "btn_kpi_fav_filter_toggle" in app_code
 
 
+def test_untagged_and_legacy_favorites_consolidation(monkeypatch):
+    """Verifies that favorites without a username or from legacy string formats are preserved as Untagged and visible."""
+    import tempfile
+    import json
+    from utils.favorites_manager import load_raw_favorites, save_raw_favorites, load_favorites, is_favorite, get_users_for_parcel
+
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tf:
+        temp_file = tf.name
+
+    try:
+        # Pre-seed isolated file with legacy string, untagged dict, and tagged dict
+        seed_data = [
+            "legacy_parcel_001",
+            {"parcel_id": "untagged_parcel_002", "username": ""},
+            {"parcel_id": "tagged_parcel_003", "username": "VPT"}
+        ]
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(seed_data, f)
+
+        monkeypatch.setattr("utils.favorites_manager.get_favorites_file_path", lambda: temp_file)
+
+        raw = load_raw_favorites()
+        assert len(raw) == 3
+
+        # Check all are recognized as favorites
+        all_favs = load_favorites()
+        assert "legacy_parcel_001" in all_favs
+        assert "untagged_parcel_002" in all_favs
+        assert "tagged_parcel_003" in all_favs
+        assert is_favorite("legacy_parcel_001") is True
+        assert is_favorite("untagged_parcel_002") is True
+        assert is_favorite("tagged_parcel_003") is True
+
+        # Check user tags
+        assert get_users_for_parcel("legacy_parcel_001") == ["Untagged"]
+        assert get_users_for_parcel("untagged_parcel_002") == ["Untagged"]
+        assert get_users_for_parcel("tagged_parcel_003") == ["VPT"]
+
+        # Ensure saving raw preserves untagged without dropping them
+        assert save_raw_favorites(raw) is True
+        raw_reloaded = load_raw_favorites()
+        assert len(raw_reloaded) == 3
+        reloaded_ids = {r["parcel_id"] for r in raw_reloaded}
+        assert reloaded_ids == {"legacy_parcel_001", "untagged_parcel_002", "tagged_parcel_003"}
+
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+
+def test_user_specific_favorites_filtering(monkeypatch):
+    """Verifies that favorites can be filtered strictly by specific user or Untagged."""
+    import tempfile
+    from utils.favorites_manager import save_raw_favorites, load_favorites, is_favorite, filter_favorite_parcels
+
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tf:
+        temp_file = tf.name
+
+    try:
+        monkeypatch.setattr("utils.favorites_manager.get_favorites_file_path", lambda: temp_file)
+
+        sample_records = [
+            {"parcel_id": "p_vpt", "username": "VPT"},
+            {"parcel_id": "p_ppt", "username": "PPT"},
+            {"parcel_id": "p_guest", "username": "Guest-1"},
+            {"parcel_id": "p_none", "username": "Untagged"},
+        ]
+        save_raw_favorites(sample_records)
+
+        # VPT favorites
+        vpt_favs = load_favorites(username="VPT")
+        assert vpt_favs == {"p_vpt"}
+        assert is_favorite("p_vpt", username="VPT") is True
+        assert is_favorite("p_ppt", username="VPT") is False
+
+        # PPT favorites
+        ppt_favs = load_favorites(username="PPT")
+        assert ppt_favs == {"p_ppt"}
+
+        # Untagged favorites
+        untagged_favs = load_favorites(username="Untagged")
+        assert untagged_favs == {"p_none"}
+
+        # All favorites combined
+        all_favs = load_favorites()
+        assert all_favs == {"p_vpt", "p_ppt", "p_guest", "p_none"}
+
+        mock_parcels = [{"id": "p_vpt"}, {"id": "p_ppt"}, {"id": "p_guest"}, {"id": "p_other"}]
+        vpt_parcels = filter_favorite_parcels(mock_parcels, username="VPT")
+        assert len(vpt_parcels) == 1
+        assert vpt_parcels[0]["id"] == "p_vpt"
+
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+
+def test_tab1_ledger_fav_column_and_telemetry_sidebar_placement():
+    """Verifies that Tab 1 ledger has dedicated Fav/Shortlist column with medium width and telemetry is inside sidebar."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    # Telemetry must be rendered inside st.sidebar
+    assert "render_system_telemetry_html()" in app_code
+    assert "with st.sidebar:" in app_code
+
+    # Tab 1 column config has Fav / Shortlisted By with medium width and pinned
+    assert '"Fav / Shortlisted By": st.column_config.TextColumn("Fav / Investor"' in app_code
+    assert 'pinned=True, width="medium"' in app_code
+
+    # Tab 1 rows check both fav_u and is_f
+    assert 'fav_cell = f"⭐ {\', \'.join(fav_u)}"' in app_code
+    assert 'fav_cell = "⭐ Favorited (Untagged)"' in app_code
+
+    # S.No. preservation in map locator
+    assert 'master_sno_map.get(str(p.get("id")), idx + 1)' in app_code
+
+
 

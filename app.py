@@ -854,7 +854,9 @@ if st.sidebar.button("⚡ Run Weekly AI/ML Scan Now", use_container_width=True):
 # 10. CPU, RAM & Hosted Environment Telemetry Widget
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🖥️ Hosted System Telemetry")
-render_html_block(render_system_telemetry_html())
+with st.sidebar:
+    render_html_block(render_system_telemetry_html())
+
 
 # -------------------------------------------------------------
 # FILTERING LOGIC
@@ -1108,19 +1110,35 @@ with view_tabs[0]:
 
     # Assign persistent serial numbers matching Tab 1 table row order
     for idx, p in enumerate(display_parcels):
-        p["_serial_no"] = idx + 1
+        p["_serial_no"] = master_sno_map.get(str(p.get("id")), idx + 1)
+
+    active_map_fav_filter = st.session_state.get("sb_map_fav_quick_select", "🌐 Show All on Map")
+
+    # Filter display parcels for map if map fav quick filter is active
+    map_parcels = list(display_parcels)
+    if active_map_fav_filter == "⭐ Show All Favorites on Map":
+        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")), cached_set=st.session_state["favorites"])]
+    elif active_map_fav_filter.startswith("👤 ") and "'s Favs on Map" in active_map_fav_filter:
+        u_target = active_map_fav_filter.split("👤 ")[1].split("'s Favs on Map")[0].strip()
+        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")), username=u_target)]
 
     # S.No. & Multi-User Favorites Google Map Locator Bar
     loc_c1, loc_c2, loc_c3 = st.columns([2.5, 1.3, 1.0])
     with loc_c1:
         sno_options = ["🗺️ Overview (All Farmland Parcels)"]
-        for idx, p in enumerate(display_parcels):
+        for p in map_parcels:
             pid = str(p.get("id"))
+            master_sno = master_sno_map.get(pid, 1)
             fav_u = fav_users_by_parcel.get(pid, [])
-            fav_tag = f" • ⭐ {', '.join(fav_u)}" if fav_u else ""
+            if fav_u:
+                fav_tag = f" • ⭐ {', '.join(fav_u)}"
+            elif is_favorite(pid, cached_set=st.session_state["favorites"]):
+                fav_tag = " • ⭐ Favorited"
+            else:
+                fav_tag = ""
             sc_tag = " • 🚨 SC/ST" if (p.get("is_sc_st_land") or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")) else ""
             bigha_txt = f"{round(float(p.get('size_acres', 0))*1.6, 2)} Bigha"
-            sno_options.append(f"#{idx + 1}. {p.get('name')} ({p.get('regional_district', '')} • {bigha_txt}{fav_tag}{sc_tag})")
+            sno_options.append(f"#{master_sno}. {p.get('name')} ({p.get('regional_district', '')} • {bigha_txt}{fav_tag}{sc_tag})")
 
         selected_sno_label = st.selectbox(
             "🎯 Locate Farmland / Favorite by S.No. on Google Map:",
@@ -1132,13 +1150,16 @@ with view_tabs[0]:
 
     with loc_c2:
         map_fav_quick_choices = ["🌐 Show All on Map", "⭐ Show All Favorites on Map"] + [f"👤 {u}'s Favs on Map" for u in all_active_usernames]
+        map_filter_idx = map_fav_quick_choices.index(active_map_fav_filter) if active_map_fav_filter in map_fav_quick_choices else 0
         sel_map_fav_quick = st.selectbox(
             "⭐ Filter Map Pins:",
             options=map_fav_quick_choices,
-            index=0,
+            index=map_filter_idx,
             key="sb_map_fav_quick_select",
             help="Focus the Google Map pins on only shortlisted favorites (visible to all or by specific investor)."
         )
+        if sel_map_fav_quick != active_map_fav_filter:
+            st.rerun()
 
     with loc_c3:
         st.write("")
@@ -1148,30 +1169,25 @@ with view_tabs[0]:
                 st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
                 st.rerun()
 
-    # Filter display parcels for map if map fav quick filter is active
-    map_parcels = list(display_parcels)
-    if sel_map_fav_quick == "⭐ Show All Favorites on Map":
-        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")))]
+    if sel_map_fav_quick != "🌐 Show All on Map":
         if map_parcels:
             center_lat = float(map_parcels[0]["lat"])
             center_lng = float(map_parcels[0]["lng"])
             map_zoom = 11
-    elif sel_map_fav_quick.startswith("👤 ") and "'s Favs on Map" in sel_map_fav_quick:
-        u_target = sel_map_fav_quick.split("👤 ")[1].split("'s Favs on Map")[0].strip()
-        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")), username=u_target)]
-        if map_parcels:
-            center_lat = float(map_parcels[0]["lat"])
-            center_lng = float(map_parcels[0]["lng"])
-            map_zoom = 11
+        else:
+            st.warning(f"⚠️ No properties found for '{sel_map_fav_quick}' with current district/search filters.")
 
     focused_sno = None
     if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
         try:
             focused_sno = int(selected_sno_label.split(".")[0].replace("#", "").strip())
-            target_p = display_parcels[focused_sno - 1]
-            center_lat = float(target_p["lat"])
-            center_lng = float(target_p["lng"])
-            map_zoom = 15
+            target_p = next((p for p in map_parcels if master_sno_map.get(str(p.get("id"))) == focused_sno), None)
+            if target_p is None:
+                target_p = next((p for p in all_parcels if master_sno_map.get(str(p.get("id"))) == focused_sno), None)
+            if target_p:
+                center_lat = float(target_p["lat"])
+                center_lng = float(target_p["lng"])
+                map_zoom = 15
         except Exception:
             focused_sno = None
 
@@ -1408,10 +1424,15 @@ with view_tabs[0]:
                 caste_badge = "✅ General / OBC"
 
             fav_u = fav_users_by_parcel.get(pid, [])
-            fav_cell = f"⭐ {', '.join(fav_u)}" if fav_u else "—"
+            if fav_u:
+                fav_cell = f"⭐ {', '.join(fav_u)}"
+            elif is_f:
+                fav_cell = "⭐ Favorited (Untagged)"
+            else:
+                fav_cell = "—"
 
             tab1_rows.append({
-                "S.No.": p.get("_serial_no", master_sno_map.get(pid, idx + 1)),
+                "S.No.": master_sno_map.get(pid, idx + 1),
                 "Fav / Shortlisted By": fav_cell,
                 "Estate Name": p.get("name"),
                 "Status": status_text,
@@ -1441,8 +1462,8 @@ with view_tabs[0]:
         df_tab1 = pd.DataFrame(tab1_rows)
         # Freeze first 3 columns (S.No., Fav / Shortlisted By, Estate Name)
         tab1_col_config = {
-            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
-            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Shortlist", pinned=True, width="small"),
+            "S.No.": st.column_config.NumberColumn("S.No.", help="Master Serial Number matching Google Map pins and audit ledgers", pinned=True, width="small"),
+            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Investor", help="Shortlisted Favorite status and investor tagging (e.g. ⭐ VPT, PPT, Guest)", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "Status": st.column_config.TextColumn("Status", width="small"),
             "District": st.column_config.TextColumn("District", width="small"),
@@ -1468,7 +1489,7 @@ with view_tabs[0]:
             st.caption("Favorites saved under your first name are visible to all users. Each user can save multiple favorites, or remove and re-add them anytime.")
             qs_c1, qs_c2, qs_c3, qs_c4 = st.columns([2.2, 1.4, 1.2, 1.2])
             with qs_c1:
-                qs_parcels_map = {f"#{idx+1}. {p['name']} ({p.get('regional_district')})": str(p['id']) for idx, p in enumerate(display_parcels)}
+                qs_parcels_map = {f"#{master_sno_map.get(str(p.get('id')), idx+1)}. {p['name']} ({p.get('regional_district')})": str(p['id']) for idx, p in enumerate(display_parcels)}
                 sel_qs_label = st.selectbox("Select Farmland Property:", options=list(qs_parcels_map.keys()), key="sel_qs_prop")
                 sel_qs_pid = qs_parcels_map[sel_qs_label]
             with qs_c2:
@@ -1691,7 +1712,7 @@ with view_tabs[1]:
             active_farm,
             active_routing,
             is_fav,
-            serial_no=selected_farm_idx + 1,
+            serial_no=master_sno_map.get(active_pid, selected_farm_idx + 1),
             flag_info=active_flag_info,
             fav_users=cur_fav_users
         ))
@@ -1755,9 +1776,17 @@ with view_tabs[2]:
             else:
                 caste_badge = "✅ General / OBC"
 
+            fav_u = fav_users_by_parcel.get(pid, [])
+            if fav_u:
+                fav_cell = f"⭐ {', '.join(fav_u)}"
+            elif is_f:
+                fav_cell = "⭐ Favorited (Untagged)"
+            else:
+                fav_cell = "—"
+
             table_rows.append({
                 "S.No.": master_sno_map.get(pid, idx + 1),
-                "Fav": "⭐" if is_f else "—",
+                "Fav / Shortlisted By": fav_cell,
                 "Estate Name": p.get("name"),
                 "Status": status_text,
                 "District": p.get("regional_district"),
@@ -1786,10 +1815,10 @@ with view_tabs[2]:
             })
 
         df_table = pd.DataFrame(table_rows)
-        # Freeze first 3 columns (S.No., Fav, Estate Name)
+        # Freeze first 3 columns (S.No., Fav / Shortlisted By, Estate Name)
         tab3_col_config = {
-            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
-            "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
+            "S.No.": st.column_config.NumberColumn("S.No.", help="Master Serial Number matching Tab 1 and Google Map pins", pinned=True, width="small"),
+            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Investor", help="Shortlisted Favorite status and investor tagging", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "Status": st.column_config.TextColumn("Status", width="small"),
             "District": st.column_config.TextColumn("District", width="small"),
@@ -1900,7 +1929,7 @@ with view_tabs[4]:
             fav_matrix_rows.append({
                 "Tab 1 S.No.": master_sno_map.get(pid, idx + 1),
                 "Property ID": pid,
-                "Favorited By": ", ".join(cur_u_list) if cur_u_list else "—",
+                "Favorited By": ", ".join(cur_u_list) if cur_u_list else "Saved (Untagged)",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
                 "Road Dist (km)": r.get("road_km"),
@@ -1949,7 +1978,7 @@ with view_tabs[4]:
             t1_sno = master_sno_map.get(pid, i + 1)
             col_target = c_chk1 if i % 2 == 0 else c_chk2
             cur_u = get_users_for_parcel(pid, raw_fav_records)
-            u_lbl = f" [Starred by: {', '.join(cur_u)}]" if cur_u else ""
+            u_lbl = f" [Starred by: {', '.join(cur_u)}]" if cur_u else " [Starred: Untagged]"
             with col_target:
                 if st.checkbox(
                     f"**#{t1_sno}**. {p.get('name')} (`{pid}`) — *{p.get('regional_district')}*{u_lbl}",

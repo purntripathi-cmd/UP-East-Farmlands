@@ -20,54 +20,118 @@ def get_favorites_file_path() -> str:
     return os.path.join(base_dir, "data", "user_favorites.json")
 
 
+def get_candidate_favorites_file_paths() -> List[str]:
+    """Returns all potential disk paths where favorites might be persisted."""
+    primary = get_favorites_file_path()
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(base_dir, "data")
+
+    # If primary was overridden outside the project data directory (e.g., isolated test sandbox)
+    if not os.path.abspath(primary).startswith(os.path.abspath(data_dir)):
+        return [primary]
+
+    candidates = [
+        primary,
+        os.path.join(data_dir, "favorites.json"),
+        os.path.join(data_dir, "saved_favorites.json"),
+    ]
+    res = []
+    seen = set()
+    for c in candidates:
+        if c not in seen:
+            seen.add(c)
+            res.append(c)
+    return res
+
+
 def load_raw_favorites() -> List[Dict[str, Any]]:
     """
     Loads raw favorite records from persistent disk storage.
-    Automatically migrates legacy string lists ['id1', 'id2'] to structured records.
+    Consolidates old and new favorites across all candidate files.
+    Preserves all records, even if username tagging was omitted (defaults to 'Untagged').
     """
-    file_path = get_favorites_file_path()
-    if not os.path.exists(file_path):
-        return []
+    all_records: List[Dict[str, Any]] = []
+    seen = set()
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    for file_path in get_candidate_favorites_file_paths():
+        if not os.path.exists(file_path):
+            continue
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-        if isinstance(data, list):
-            records: List[Dict[str, Any]] = []
-            for item in data:
+            raw_items = []
+            if isinstance(data, list):
+                raw_items = data
+            elif isinstance(data, dict):
+                if "favorites" in data and isinstance(data["favorites"], list):
+                    raw_items = data["favorites"]
+                elif "records" in data and isinstance(data["records"], list):
+                    raw_items = data["records"]
+                elif "saved" in data and isinstance(data["saved"], list):
+                    raw_items = data["saved"]
+                else:
+                    for k, v in data.items():
+                        if isinstance(v, dict):
+                            item_d = dict(v)
+                            item_d.setdefault("parcel_id", k)
+                            raw_items.append(item_d)
+                        elif v:
+                            raw_items.append({"parcel_id": str(k)})
+
+            for item in raw_items:
                 if isinstance(item, str):
-                    # Legacy migration: attribute to default user VPT
-                    records.append({
-                        "parcel_id": str(item),
-                        "username": "VPT",
-                        "timestamp": datetime.now().strftime("%d %b %Y, %H:%M IST")
-                    })
-                elif isinstance(item, dict) and "parcel_id" in item:
-                    records.append({
-                        "parcel_id": str(item["parcel_id"]),
-                        "username": str(item.get("username", "VPT")).strip() or "VPT",
-                        "timestamp": str(item.get("timestamp", datetime.now().strftime("%d %b %Y, %H:%M IST")))
-                    })
-            return records
-    except Exception:
-        pass
-    return []
+                    pid = str(item).strip()
+                    if pid:
+                        key = (pid, "untagged")
+                        if key not in seen:
+                            seen.add(key)
+                            all_records.append({
+                                "parcel_id": pid,
+                                "username": "Untagged",
+                                "timestamp": datetime.now().strftime("%d %b %Y, %H:%M IST")
+                            })
+                elif isinstance(item, dict):
+                    pid = str(item.get("parcel_id") or item.get("id") or item.get("farm_id") or "").strip()
+                    if not pid:
+                        continue
+                    raw_u = item.get("username")
+                    clean_u = str(raw_u).strip() if raw_u and str(raw_u).strip() else "Untagged"
+                    key = (pid, clean_u.lower())
+                    if key not in seen:
+                        seen.add(key)
+                        all_records.append({
+                            "parcel_id": pid,
+                            "username": clean_u,
+                            "timestamp": str(item.get("timestamp") or datetime.now().strftime("%d %b %Y, %H:%M IST"))
+                        })
+        except Exception:
+            continue
+
+    return all_records
 
 
 def save_raw_favorites(records: List[Dict[str, Any]]) -> bool:
-    """Persists favorite records list to disk."""
+    """Persists favorite records list to disk, preserving all items including untagged."""
     file_path = get_favorites_file_path()
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        # Deduplicate identical (parcel_id, username)
         seen = set()
         deduped = []
         for r in records:
-            key = (str(r.get("parcel_id")), str(r.get("username", "")).strip())
-            if key not in seen and key[0] and key[1]:
+            pid = str(r.get("parcel_id") or r.get("id") or "").strip()
+            if not pid:
+                continue
+            raw_u = r.get("username")
+            clean_u = str(raw_u).strip() if raw_u and str(raw_u).strip() else "Untagged"
+            key = (pid, clean_u.lower())
+            if key not in seen:
                 seen.add(key)
-                deduped.append(r)
+                deduped.append({
+                    "parcel_id": pid,
+                    "username": clean_u,
+                    "timestamp": str(r.get("timestamp") or datetime.now().strftime("%d %b %Y, %H:%M IST"))
+                })
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(deduped, f, indent=2)
@@ -79,23 +143,26 @@ def save_raw_favorites(records: List[Dict[str, Any]]) -> bool:
 def load_favorites(username: Optional[str] = None) -> Set[str]:
     """
     Loads favorited parcel IDs.
-    - If username is None or 'All Users': returns set of all parcel IDs favorited by any user.
+    - If username is None, 'All Users', 'All', or '': returns set of all parcel IDs favorited by any user (including untagged).
+    - If username is 'Untagged' or 'General': returns parcel IDs that have no specific user tagged.
     - If username is specified: returns set of parcel IDs favorited by that specific user.
     """
     records = load_raw_favorites()
     if not username or username in ("All Users", "All", ""):
         return {r["parcel_id"] for r in records}
     target_user = username.strip().lower()
+    if target_user in ("untagged", "general", "general / untagged"):
+        return {r["parcel_id"] for r in records if r.get("username", "").strip().lower() in ("untagged", "general", "general / untagged", "")}
     return {r["parcel_id"] for r in records if r.get("username", "").strip().lower() == target_user}
 
 
 def save_favorites(fav_set: Set[str], username: str = "VPT") -> bool:
     """
     Persists favorited parcel IDs for a specific user to disk.
-    Preserves favorites registered by other users.
+    Preserves favorites registered by other users and untagged records.
     """
     records = load_raw_favorites()
-    target_user = username.strip().lower() if username else "vpt"
+    target_user = username.strip().lower() if username and username.strip() else "vpt"
     # Keep other users' favorites
     kept_records = [r for r in records if r.get("username", "").strip().lower() != target_user]
     # Add new favorites for this user
@@ -103,7 +170,7 @@ def save_favorites(fav_set: Set[str], username: str = "VPT") -> bool:
     for pid in sorted(list(fav_set)):
         kept_records.append({
             "parcel_id": str(pid),
-            "username": username.strip() if username else "VPT",
+            "username": username.strip() if username and username.strip() else "VPT",
             "timestamp": now_str
         })
     return save_raw_favorites(kept_records)
@@ -133,16 +200,22 @@ def remove_favorite(parcel_id: str, username: Optional[str] = None) -> bool:
     """
     Removes favorite(s) for a given parcel ID.
     - If username is specified: removes favorite for that specific user only.
-    - If username is None: removes all favorites for this parcel across all users.
+    - If username is None or 'All Users': removes all favorites for this parcel across all users.
     """
     pid = str(parcel_id)
     records = load_raw_favorites()
     if username and username not in ("All Users", "All"):
         clean_user = username.strip().lower()
-        new_records = [
-            r for r in records
-            if not (r.get("parcel_id") == pid and r.get("username", "").strip().lower() == clean_user)
-        ]
+        if clean_user in ("untagged", "general", "general / untagged"):
+            new_records = [
+                r for r in records
+                if not (r.get("parcel_id") == pid and r.get("username", "").strip().lower() in ("untagged", "general", "general / untagged", ""))
+            ]
+        else:
+            new_records = [
+                r for r in records
+                if not (r.get("parcel_id") == pid and r.get("username", "").strip().lower() == clean_user)
+            ]
     else:
         new_records = [r for r in records if r.get("parcel_id") != pid]
 
@@ -186,8 +259,9 @@ def is_favorite(
     """
     Checks whether a parcel ID is favorited.
     - If username is a set/list/tuple: treated as cached_set (backward compatibility).
+    - If username is None or 'All Users' or 'All' or '': checks if favorited by ANY user (including untagged).
+    - If username is 'Untagged': checks if favorited without a user tag.
     - If username is a string: checks if favorited by that user.
-    - If username is None or 'All Users': checks if favorited by ANY user.
     - If cached_set is provided and username is None: directly checks membership in cached_set.
     """
     pid = str(parcel_id)
@@ -205,6 +279,11 @@ def is_favorite(
 
     if isinstance(username, str):
         clean_user = username.strip().lower()
+        if clean_user in ("untagged", "general", "general / untagged"):
+            return any(
+                r.get("parcel_id") == pid and r.get("username", "").strip().lower() in ("untagged", "general", "general / untagged", "")
+                for r in records
+            )
         return any(r.get("parcel_id") == pid and r.get("username", "").strip().lower() == clean_user for r in records)
 
     return False
@@ -217,9 +296,10 @@ def get_users_for_parcel(parcel_id: str, raw_records: Optional[List[Dict[str, An
     users = []
     seen = set()
     for r in records:
-        if r.get("parcel_id") == pid:
-            u = r.get("username", "").strip()
-            if u and u.lower() not in seen:
+        if str(r.get("parcel_id") or r.get("id")) == pid:
+            raw_u = r.get("username")
+            u = str(raw_u).strip() if raw_u and str(raw_u).strip() else "Untagged"
+            if u.lower() not in seen:
                 seen.add(u.lower())
                 users.append(u)
     return users
@@ -228,13 +308,14 @@ def get_users_for_parcel(parcel_id: str, raw_records: Optional[List[Dict[str, An
 def get_all_active_usernames(raw_records: Optional[List[Dict[str, Any]]] = None) -> List[str]:
     """
     Returns list of all active usernames, starting with the defaults:
-    VPT, PPT, Guest-1, guest-2, followed by any custom usernames in records.
+    VPT, PPT, Guest-1, guest-2, followed by any custom or untagged usernames in records.
     """
     records = raw_records if raw_records is not None else load_raw_favorites()
     names = list(DEFAULT_USERNAMES)
     seen = {n.lower() for n in names}
     for r in records:
-        u = r.get("username", "").strip()
+        raw_u = r.get("username")
+        u = str(raw_u).strip() if raw_u and str(raw_u).strip() else ""
         if u and u.lower() not in seen:
             seen.add(u.lower())
             names.append(u)
