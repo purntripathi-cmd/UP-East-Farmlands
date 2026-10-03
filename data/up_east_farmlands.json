@@ -86,7 +86,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 90.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_var_031",
@@ -175,7 +179,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 88.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_var_033",
@@ -264,7 +272,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 94.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_var_036",
@@ -353,7 +365,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 91.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_3",
@@ -442,7 +458,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 89.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "agri200_var_034",
@@ -531,7 +551,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 90.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_025",
@@ -620,7 +644,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 88.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_1",
@@ -709,7 +737,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 94.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_4",
@@ -798,7 +830,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 90.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_var_032",
@@ -887,7 +923,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 93.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_023",
@@ -976,7 +1016,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 94.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_var_035",
@@ -1065,7 +1109,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 95.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "farm_var_2",
@@ -1154,7 +1202,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 94.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_5",
@@ -1243,7 +1295,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 91.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_024",
@@ -1332,7 +1388,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 89.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_026",
@@ -1421,7 +1481,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 89.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_mir_042",
@@ -1510,7 +1574,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 94.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_cha_040",
@@ -1599,7 +1667,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 89.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_cha_3",
@@ -1688,7 +1760,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 89.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_cha_1",
@@ -1777,7 +1853,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 96.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "⚠️ CONDITIONAL: Collector/DM Permission Granted under Section 98",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: SC Bhumidhar u/s 98 UP Revenue Code. Collector Sanction Order #DM/VNS/REV/2026/884 Attached."
   },
   {
     "id": "agri200_cha_038",
@@ -1866,7 +1946,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 95.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_027",
@@ -1955,7 +2039,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 90.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bha_059",
@@ -2044,7 +2132,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 94.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_cha_2",
@@ -2133,7 +2225,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 91.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_bha_1",
@@ -2222,7 +2318,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bha_058",
@@ -2311,7 +2411,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 91.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_mir_044",
@@ -2400,7 +2504,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 88.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_mir_1",
@@ -2489,7 +2597,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 92.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "ST Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "farm_mir_2",
@@ -2578,7 +2690,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 93.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_cha_039",
@@ -2667,7 +2783,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 90.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_jau_046",
@@ -2756,7 +2876,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_jau_047",
@@ -2845,7 +2969,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 91.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_mir_041",
@@ -2934,7 +3062,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 95.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bha_060",
@@ -3023,7 +3155,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 91.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_jau_1",
@@ -3112,7 +3248,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 88.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_gha_1",
@@ -3201,7 +3341,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 90.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "agri200_aza_054",
@@ -3290,7 +3434,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 91.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_kai_066",
@@ -3379,7 +3527,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 90.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_gha_048",
@@ -3468,7 +3620,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 89.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_jau_045",
@@ -3557,7 +3713,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 89.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_mir_043",
@@ -3646,7 +3806,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 89.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_son_1",
@@ -3735,7 +3899,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 93.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_kai_1",
@@ -3824,7 +3992,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 90.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_kai_064",
@@ -3913,7 +4085,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 95.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "agri200_gha_050",
@@ -4002,7 +4178,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 96.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_pra_056",
@@ -4091,7 +4271,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 92.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_aza_053",
@@ -4180,7 +4364,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 90.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_aza_051",
@@ -4269,7 +4457,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 90.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_gha_049",
@@ -4358,7 +4550,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 92.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_aza_1",
@@ -4447,7 +4643,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 95.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_jau_2",
@@ -4536,7 +4736,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 96.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_son_061",
@@ -4625,7 +4829,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 88.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_kai_065",
@@ -4714,7 +4922,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 88.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "agri200_sin_075",
@@ -4803,7 +5015,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 90.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_aza_052",
@@ -4892,7 +5108,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 94.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_028",
@@ -4981,7 +5201,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 88.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_pra_055",
@@ -5070,7 +5294,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 93.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bux_068",
@@ -5159,7 +5387,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 96.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_bux_1",
@@ -5248,7 +5480,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 96.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_pra_057",
@@ -5337,7 +5573,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 90.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_029",
@@ -5426,7 +5666,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 91.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_roh_1",
@@ -5515,7 +5759,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 89.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "farm_pra_1",
@@ -5604,7 +5852,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 93.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bux_067",
@@ -5693,7 +5945,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 95.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_roh_071",
@@ -5782,7 +6038,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 96.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_son_063",
@@ -5871,7 +6131,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 94.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_son_062",
@@ -5960,7 +6224,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 95.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_sin_1",
@@ -6049,7 +6317,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 96.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_bux_069",
@@ -6138,7 +6410,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 90.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_roh_070",
@@ -6227,7 +6503,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 90.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_var_030",
@@ -6316,7 +6596,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 89.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "agri200_rew_073",
@@ -6405,7 +6689,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.6
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_sin_074",
@@ -6494,7 +6782,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 93.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_sin_076",
@@ -6583,7 +6875,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 89.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "farm_rew_1",
@@ -6672,7 +6968,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 92.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "agri200_rew_072",
@@ -6761,7 +7061,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 94.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_001",
@@ -6850,7 +7154,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 91.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_002",
@@ -6939,7 +7247,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 92.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_003",
@@ -7028,7 +7340,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 91.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_004",
@@ -7117,7 +7433,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 93.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "upeast_dist_005",
@@ -7206,7 +7526,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 93.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_006",
@@ -7295,7 +7619,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 92.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_007",
@@ -7384,7 +7712,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 95.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_008",
@@ -7473,7 +7805,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_009",
@@ -7562,7 +7898,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 89.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_010",
@@ -7651,7 +7991,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 96.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_011",
@@ -7740,7 +8084,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 94.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_012",
@@ -7829,7 +8177,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_013",
@@ -7918,7 +8270,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 93.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "upeast_dist_014",
@@ -8007,7 +8363,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 89.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_015",
@@ -8096,7 +8456,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 92.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_016",
@@ -8185,7 +8549,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 97.0
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_017",
@@ -8274,7 +8642,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 94.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_018",
@@ -8363,7 +8735,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 88.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_019",
@@ -8452,7 +8828,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 91.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_020",
@@ -8541,7 +8921,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 92.4
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_021",
@@ -8630,7 +9014,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 95.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_022",
@@ -8719,7 +9107,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 89.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "upeast_dist_023",
@@ -8808,7 +9200,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 92.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_024",
@@ -8897,7 +9293,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 90.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_025",
@@ -8986,7 +9386,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 95.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_026",
@@ -9075,7 +9479,11 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 91.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_027",
@@ -9164,7 +9572,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 89.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_028",
@@ -9253,7 +9665,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 88.1
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_029",
@@ -9342,7 +9758,11 @@
       "crop_classification": "Teakwood Perimeter & High-Density Amla Plantation",
       "confidence_pct": 90.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_030",
@@ -9431,7 +9851,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 92.3
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "SC / Dalit Landholding (Sec 98 Restricted)",
+    "is_sc_st_land": true,
+    "section_98_status": "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
   },
   {
     "id": "upeast_dist_031",
@@ -9520,7 +9944,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 90.2
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_032",
@@ -9609,7 +10037,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 94.9
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_033",
@@ -9698,7 +10130,11 @@
       "crop_classification": "Organic Medicinal Ashwagandha, Lemongrass & Floriculture",
       "confidence_pct": 90.7
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_034",
@@ -9787,7 +10223,11 @@
       "crop_classification": "Export Polyhouse Dutch Roses & Hydroponic Greens",
       "confidence_pct": 91.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_035",
@@ -9876,7 +10316,11 @@
       "crop_classification": "Certified Sandalwood (Chandan) & Hass Avocado Plantation",
       "confidence_pct": 90.8
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   },
   {
     "id": "upeast_dist_036",
@@ -9965,6 +10409,10 @@
       "crop_classification": "Commercial Dragonfruit & Taiwanese Pink Guava Polyhouse",
       "confidence_pct": 93.5
     },
-    "freshness_timestamp": "03 Oct 2026, 19:45 IST"
+    "freshness_timestamp": "03 Oct 2026, 19:45 IST",
+    "caste_category": "General / OBC (Unrestricted)",
+    "is_sc_st_land": false,
+    "section_98_status": "✅ UNRESTRICTED: General/OBC Landholding",
+    "khatauni_caste_remark": "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
   }
 ]

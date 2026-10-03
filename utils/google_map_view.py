@@ -60,7 +60,8 @@ def create_google_farmland_map(
     center_lat: Optional[float] = None,
     center_lng: Optional[float] = None,
     zoom_start: int = 10,
-    selected_pin: Optional[Dict[str, Any]] = None
+    selected_pin: Optional[Dict[str, Any]] = None,
+    focused_sno: Optional[int] = None
 ) -> folium.Map:
     """
     Constructs an interactive Folium Map using Google Maps satellite/hybrid tiles,
@@ -150,14 +151,17 @@ def create_google_farmland_map(
             ).add_to(ring_group)
         ring_group.add_to(m)
 
-    # 3. Plot Farmland Parcels with Custom Colors & Popups
-    marker_cluster = plugins.MarkerCluster(name="Farmland Parcels Cluster").add_to(m)
+    # 3. Plot Farmland Parcels with Custom Numbered S.No. Badges & Popups
+    marker_cluster = plugins.MarkerCluster(name="Farmland Parcels Cluster", disableClusteringAtZoom=12).add_to(m)
 
-    for p in parcels:
+    for idx, p in enumerate(parcels):
         p_lat = float(p.get("lat", origin_lat))
         p_lng = float(p.get("lng", origin_lng))
         pid = str(p.get("id"))
         is_fav = pid in fav_set
+        sno = p.get("_serial_no", idx + 1)
+        is_sc_st = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+        is_focused = (focused_sno is not None and sno == focused_sno)
 
         # Compute dynamic routing relative to active origin
         routing = compute_parcel_routing(p, origin_lat, origin_lng, origin_name)
@@ -168,22 +172,65 @@ def create_google_farmland_map(
         score = p.get("due_diligence_score", 85)
         grade = p.get("due_diligence_grade", "A Institutional Grade")
 
-        # Color coding by grade or favorite
-        if is_fav:
-            marker_color = "purple"
-            icon_name = "heart"
+        # Color coding by caste, favorite, or score
+        if is_sc_st:
+            badge_bg = "#DC2626"
+            badge_border = "#7F1D1D"
+            badge_text = f"#{sno} 🚨"
+        elif is_fav:
+            badge_bg = "#7C3AED"
+            badge_border = "#4C1D95"
+            badge_text = f"#{sno} ★"
         elif score >= 90:
-            marker_color = "green"
-            icon_name = "leaf"
+            badge_bg = "#059669"
+            badge_border = "#064E3B"
+            badge_text = f"#{sno}"
         elif score >= 75:
-            marker_color = "blue"
-            icon_name = "check"
+            badge_bg = "#2563EB"
+            badge_border = "#1E3A8A"
+            badge_text = f"#{sno}"
         elif score >= 60:
-            marker_color = "orange"
-            icon_name = "warning"
+            badge_bg = "#D97706"
+            badge_border = "#78350F"
+            badge_text = f"#{sno}"
         else:
-            marker_color = "red"
-            icon_name = "times"
+            badge_bg = "#EF4444"
+            badge_border = "#991B1B"
+            badge_text = f"#{sno}"
+
+        focus_style = "box-shadow: 0 0 0 4px #FBBF24, 0 6px 16px rgba(0,0,0,0.5); transform: scale(1.25); z-index: 9999;" if is_focused else "box-shadow: 0 2px 6px rgba(0,0,0,0.35);"
+
+        icon_html = f"""
+        <div style="
+            background: {badge_bg};
+            color: white;
+            border: 2px solid {badge_border if not is_focused else '#FBBF24'};
+            border-radius: 12px;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 800;
+            text-align: center;
+            white-space: nowrap;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: pointer;
+            {focus_style}
+        ">
+            {badge_text}
+        </div>
+        """
+
+        # Highlight circle if focused
+        if is_focused:
+            folium.Circle(
+                location=[p_lat, p_lng],
+                radius=400,
+                color="#F59E0B",
+                weight=3,
+                fill=True,
+                fill_color="#FDE68A",
+                fill_opacity=0.4,
+                tooltip=f"🎯 Focused Farmland S.No. #{sno}: {p.get('name')}"
+            ).add_to(m)
 
         # News information
         news_title = p.get("published_news_title", "UP Bhulekh Land Mutation Verified")
@@ -191,12 +238,24 @@ def create_google_farmland_map(
         news_url = p.get("published_news_url", "https://upbhulekh.gov.in/")
         news_date = p.get("published_news_date", "Recent")
 
+        sc_alert_html = ""
+        if is_sc_st:
+            sc_alert_html = """
+            <div style="background: #FEF2F2; border: 1px solid #DC2626; color: #991B1B; padding: 4px 6px; border-radius: 4px; font-size: 10.5px; font-weight: bold; margin-bottom: 6px;">
+                🚨 RED FLAG: SC/ST Owned (Sec 98 UP Revenue Code — Barred for General Buyers)
+            </div>
+            """
+
+        acres_val = float(p.get('size_acres', 0.0))
+        bigha_val = round(acres_val * 1.60, 2)
+
         popup_html = f"""
-        <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 240px; line-height: 1.4;">
-            <div style="background: #1E293B; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
-                🌾 {p.get('name', 'Farmland Estate')}
+        <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 250px; line-height: 1.4;">
+            <div style="background: {'#991B1B' if is_sc_st else '#1E293B'}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
+                🌾 #{sno}. {p.get('name', 'Farmland Estate')}
             </div>
             <div style="padding: 8px 10px; border: 1px solid #CBD5E1; border-top: none; border-radius: 0 0 6px 6px;">
+                {sc_alert_html}
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{p.get('regional_district', 'Varanasi')}</span>
                     <span style="font-weight: bold; color: #10B981; font-size: 12px;">₹{p.get('price_per_acre_lakhs')} L/Acre</span>
@@ -208,7 +267,7 @@ def create_google_farmland_map(
                 </div>
 
                 <div style="font-size: 11px; margin-bottom: 6px;">
-                    <b>📐 Size:</b> {p.get('size_acres')} Acres ({p.get('size_local_units', '')})<br>
+                    <b>📐 Size:</b> {acres_val} Acres (<b>{bigha_val} Pakka Bigha</b>)<br>
                     <b>💧 TDS:</b> {p.get('water_tds_ppm', 220)} ppm • <b>Soil pH:</b> {p.get('soil_ph', 7.2)}<br>
                     <b>🛡️ DD Score:</b> <b style="color: #059669;">{score}/100</b> ({grade})
                 </div>
@@ -232,9 +291,13 @@ def create_google_farmland_map(
 
         folium.Marker(
             location=[p_lat, p_lng],
-            popup=folium.Popup(popup_html, max_width=300),
-            tooltip=f"{'⭐ ' if is_fav else ''}{p.get('name')} | {road_km} km ({drive_time}) | ₹{p.get('price_per_acre_lakhs')} L/Acre",
-            icon=folium.Icon(color=marker_color, icon=icon_name, prefix="fa")
+            popup=folium.Popup(popup_html, max_width=320),
+            tooltip=f"#{sno}. {p.get('name')} | {road_km} km ({drive_time}) | ₹{p.get('price_per_acre_lakhs')} L/Ac {'[🚨 SC/ST RESTRICTED]' if is_sc_st else ''}",
+            icon=folium.DivIcon(
+                html=icon_html,
+                icon_size=(44, 24),
+                icon_anchor=(22, 12)
+            )
         ).add_to(marker_cluster)
 
     # 4. Optional Selected Pin (Clicked on Map or Searched)

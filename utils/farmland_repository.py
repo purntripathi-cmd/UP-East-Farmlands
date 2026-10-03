@@ -106,6 +106,7 @@ def create_and_add_farmland(
     contact_phone: str,
     seller_category: str = "Direct Landowner / Farmer",
     khasra_number: str = "Khasra Verified on Bhulekh",
+    caste_category: str = "General / OBC (Unrestricted)",
     news_title: Optional[str] = None,
     news_source: Optional[str] = None,
     news_url: Optional[str] = None,
@@ -176,6 +177,14 @@ def create_and_add_farmland(
     p_news_url = news_url.strip() if news_url and news_url.strip() else "https://upbhulekh.gov.in/"
     p_notice_type = notice_type.strip() if notice_type and notice_type.strip() else "30-Day Title Caveat Cleared"
 
+    is_sc_st = "SC" in caste_category or "ST" in caste_category
+    if is_sc_st:
+        sec_status = "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)"
+        caste_remark = "UP Bhulekh Khatauni Shreni 1-Ka (Restricted): SC Tenure Holder u/s 98 UP Revenue Code 2006. Transfer to General/OBC prohibited without Collector/DM sanction."
+    else:
+        sec_status = "✅ UNRESTRICTED: General/OBC Landholding"
+        caste_remark = "UP Bhulekh Khatauni Shreni 1-Ka: Freehold General/OBC Bhumidhar (Unrestricted transfer under Section 88 UP Revenue Code)."
+
     new_farm: Dict[str, Any] = {
         "id": parcel_id,
         "name": name,
@@ -213,6 +222,10 @@ def create_and_add_farmland(
             "soil_suitability_score": 96
         },
         "annual_agro_yield_estimate_lakhs": round(size_acres * 4.2, 1),
+        "caste_category": caste_category,
+        "is_sc_st_land": is_sc_st,
+        "section_98_status": sec_status,
+        "khatauni_caste_remark": caste_remark,
         "title_status": "Freehold Clear Title",
         "revenue_record_type": "UP Bhulekh 12-Column Certified",
         "khasra_khatauni_number": khasra_number,

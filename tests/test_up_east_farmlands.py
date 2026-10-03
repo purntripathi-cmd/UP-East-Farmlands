@@ -501,4 +501,79 @@ def test_freeze_columns_column_config():
     assert tab1_config["Estate Name"]["pinned"] is True
 
 
+def test_sc_st_land_critique_penalty_and_flag(sample_parcel):
+    """Verifies that SC/ST owned properties receive Section 98 red flag penalty, high risk verdict, and warning banners."""
+    sc_parcel = dict(sample_parcel)
+    sc_parcel["caste_category"] = "SC / Dalit Landholding (Sec 98 Restricted)"
+    sc_parcel["is_sc_st_land"] = True
+    sc_parcel["section_98_status"] = "🚨 RESTRICTED: No DM Permission (Barred for General Buyers)"
+    sc_parcel["khatauni_caste_remark"] = "Khatauni Shreni 1-Ka: Restricted SC Tenure Holder u/s 98 UP Revenue Code 2006."
+
+    critique = evaluate_property_critique(sc_parcel)
+    assert critique["critique_risk_verdict"] == "🚨 HIGH RISK: SC/ST Landholding (Sec 98 Barred for General Buyers)"
+    assert critique["critique_risk_score"] <= 55
+    assert "Section 98 UP Revenue Code" in critique["negative_feedbacks_summary"]
+    assert any("Section 98 UP Revenue Code 2006" in item for item in critique["negative_feedbacks_list"])
+
+    # Test summary card HTML rendering
+    routing = compute_parcel_routing(sc_parcel, DEFAULT_ORIGIN_LAT, DEFAULT_ORIGIN_LNG, DEFAULT_ORIGIN_NAME)
+    summary_html = render_farmland_summary_card_html(sc_parcel, routing, is_fav=False, serial_no=1)
+    assert "RED FLAG: SC/ST OWNED PROPERTY — SECTION 98 UP REVENUE CODE RESTRICTION" in summary_html
+    assert "🚨 SC/ST RESTRICTED (Sec 98)" in summary_html
+
+    # Test legal and news card HTML rendering
+    legal_html = render_legal_and_news_card_html(sc_parcel)
+    assert "Caste Category & Sec 98" in legal_html
+    assert "Restricted SC Tenure Holder" in legal_html
+
+
+def test_total_bigha_purvanchal_conversion():
+    """Verifies that 1 Acre = 1.60 Pakka Bigha standard across Purvanchal."""
+    assert round(5.0 * 1.60, 2) == 8.0
+    assert round(2.5 * 1.60, 2) == 4.0
+    assert round(1.25 * 1.60, 2) == 2.0
+    conv = LandUnitConverter.calculate_all_units(5.0)
+    assert conv["pakka_bigha"] == 8.0
+    assert conv["biswa"] == 160.0
+
+
+def test_google_farmland_map_sno_div_icons_and_focus(sample_parcel):
+    """Verifies that create_google_farmland_map plots S.No. DivIcon badges and supports focused_sno zooming."""
+    sample_parcel["_serial_no"] = 1
+    sample_parcel["is_sc_st_land"] = True
+    parcels = [sample_parcel]
+
+    # Map with focused S.No.
+    m = create_google_farmland_map(
+        parcels=parcels,
+        origin_lat=DEFAULT_ORIGIN_LAT,
+        origin_lng=DEFAULT_ORIGIN_LNG,
+        origin_name=DEFAULT_ORIGIN_NAME,
+        focused_sno=1
+    )
+    assert isinstance(m, folium.Map)
+    map_html = m.get_root().render()
+    # Check that S.No. badge #1 and SC/ST RED FLAG warning are rendered
+    assert "#1" in map_html
+    assert "RED FLAG: SC/ST Owned" in map_html
+    # Check that focused circle tooltip exists
+    assert "Focused Farmland S.No. #1" in map_html
+
+
+def test_all_dataset_parcels_have_sc_st_metadata():
+    """Verifies all master parcels contain caste_category, is_sc_st_land, and section_98_status fields."""
+    parcels = load_all_parcels()
+    assert len(parcels) >= 110
+    sc_st_count = 0
+    for p in parcels:
+        assert "caste_category" in p, f"Missing caste_category in parcel {p.get('id')}"
+        assert "is_sc_st_land" in p, f"Missing is_sc_st_land in parcel {p.get('id')}"
+        assert "section_98_status" in p, f"Missing section_98_status in parcel {p.get('id')}"
+        assert "khatauni_caste_remark" in p, f"Missing khatauni_caste_remark in parcel {p.get('id')}"
+        if p["is_sc_st_land"]:
+            sc_st_count += 1
+    assert sc_st_count >= 10, f"Expected realistic SC/ST test parcels, found {sc_st_count}"
+
+
+
 

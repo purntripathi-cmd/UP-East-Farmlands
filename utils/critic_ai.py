@@ -108,11 +108,34 @@ def evaluate_property_critique(farm: Dict[str, Any]) -> Dict[str, Any]:
         )
         warning_tags.append("Co-Sharer Partition Required")
 
+    # 7. SC/ST Landholding & Section 98 UP Revenue Code 2006 Check
+    is_sc_st = farm.get("is_sc_st_land", False) or "SC" in farm.get("caste_category", "") or "ST" in farm.get("caste_category", "")
+    sec_98_approved = "Approved" in farm.get("section_98_status", "") or "CONDITIONAL" in farm.get("section_98_status", "")
+
+    if is_sc_st and not sec_98_approved:
+        penalty += 45
+        negative_feedbacks.insert(
+            0,
+            "🚨 CRITICAL RED FLAG (SC/ST Landholding): Land is held by an SC/ST Bhumidhar under Section 98 UP Revenue Code 2006. Sale to General/OBC buyers is legally prohibited without prior Collector/DM permission. Any unapproved sale deed is null and void under Section 104 and liable to State vesting under Section 105."
+        )
+        warning_tags.insert(0, "🚨 SC/ST Land - Sec 98 Barred")
+    elif is_sc_st and sec_98_approved:
+        penalty += 15
+        negative_feedbacks.insert(
+            0,
+            "⚠️ Section 98 Conditional Sanction: SC/ST landholding with Collector/DM permission order on file. Sub-Registrar endorsement and DM sanction file must be re-verified at Collectorate prior to registry."
+        )
+        warning_tags.insert(0, "⚠️ SC/ST DM Permission")
+
     # Calculate final critique score (100 = zero negative caveats)
-    critique_score = max(min(100 - penalty, 100), 52)
+    critique_score = max(min(100 - penalty, 100), 20 if is_sc_st and not sec_98_approved else 52)
 
     # Determine Verdict
-    if critique_score >= 90:
+    if is_sc_st and not sec_98_approved:
+        verdict = "🚨 HIGH RISK: SC/ST Landholding (Sec 98 Barred for General Buyers)"
+        verdict_badge = "🚨 SC/ST Restricted"
+        verdict_color = "#DC2626"
+    elif critique_score >= 90:
         verdict = "🟢 PRISTINE: Zero Structural Negative Caveats Detected"
         verdict_badge = "Pristine Zero-Risk"
         verdict_color = "#10B981"
@@ -130,7 +153,13 @@ def evaluate_property_critique(farm: Dict[str, Any]) -> Dict[str, Any]:
         verdict_color = "#EF4444"
 
     # Govt Site Verification Details
-    khatauni_clean = f"UP Bhulekh Portal (Khatauni 12-Column Record Verified - Khasra {khasra.split('Khasra')[-1].strip() if 'Khasra' in khasra else khasra})"
+    if is_sc_st and not sec_98_approved:
+        khatauni_clean = f"UP Bhulekh Khatauni (Khasra {khasra}): ⚠️ RESTRICTED SC/ST Bhumidhar u/s 98 UP Revenue Code (Barred for General Category without DM Sanction)"
+    elif is_sc_st and sec_98_approved:
+        khatauni_clean = f"UP Bhulekh Khatauni (Khasra {khasra}): SC Bhumidhar with DM Collector Section 98 Sanction Order attached"
+    else:
+        khatauni_clean = f"UP Bhulekh Portal (Khatauni 12-Column Record Verified - Khasra {khasra.split('Khasra')[-1].strip() if 'Khasra' in khasra else khasra} - General/OBC Unrestricted)"
+
     igrsup_ref = f"IGRSUP (UP Stamp & Registration) 12-Year Barah Sala Certificate #{rng.randint(2014000, 2026999)}: No subsisting registered mortgages or court attachments"
     jansunwai_ref = f"CGRMS Jansunwai Citizen Grievance Portal: Zero pending public nuisance or land encroachment disputes registered against Khasra {khasra}"
     cgwb_ref = f"UP Ground Water Department (UPGWD): Safe Aquifer Zone (Category: O-Safe, Water Table {farm.get('groundwater_depth_ft', 160)}ft)"

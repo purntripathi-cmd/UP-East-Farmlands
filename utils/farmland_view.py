@@ -114,8 +114,45 @@ def render_farmland_summary_card_html(
 </div>
 """
 
+    # SC/ST Section 98 UP Revenue Code Red Flag Alert
+    is_sc_st = item.get("is_sc_st_land", False) or "SC" in item.get("caste_category", "") or "ST" in item.get("caste_category", "")
+    sc_st_badge = ""
+    sc_st_alert_html = ""
+    if is_sc_st:
+        sec_approved = "Approved" in item.get("section_98_status", "") or "CONDITIONAL" in item.get("section_98_status", "")
+        if not sec_approved:
+            sc_st_badge = '<span style="background: #FEE2E2; color: #991B1B; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1.5px solid #DC2626;">🚨 SC/ST RESTRICTED (Sec 98)</span>'
+            sc_st_alert_html = f"""
+<div style="background: #FEF2F2; border: 2px solid #DC2626; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #7F1D1D;">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; color: #991B1B;">
+<span style="font-size: 20px;">🚨</span>
+<span>RED FLAG: SC/ST OWNED PROPERTY — SECTION 98 UP REVENUE CODE RESTRICTION</span>
+</div>
+<div style="font-size: 11.5px; line-height: 1.5; margin-top: 5px; color: #991B1B;">
+<b>Barred for General / OBC Buyers:</b> Under <b>Section 98 of UP Revenue Code, 2006</b>, agricultural land held by an SC/ST Bhumidhar cannot be transferred or sold to any non-SC/ST person without prior written sanction from the District Magistrate / Collector. Purchasing without DM approval renders the deed <b>void ab initio</b> (Section 104) and vests land in State Government (Section 105).
+<div style="margin-top: 4px; font-size: 11px; color: #7F1D1D; background: #FDE8E8; padding: 4px 8px; border-radius: 4px; border: 1px dashed #F87171;">
+<b>UP Bhulekh Khatauni Record:</b> {item.get('khatauni_caste_remark', 'Restricted SC Category Tenure Holder (Section 98 Clearance Required)')}
+</div>
+</div>
+</div>
+"""
+        else:
+            sc_st_badge = '<span style="background: #FEF3C7; color: #92400E; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #FCD34D;">⚠️ SC/ST (DM Conditional Sanction)</span>'
+            sc_st_alert_html = f"""
+<div style="background: #FFFBEB; border: 1.5px solid #F59E0B; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; color: #78350F;">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #B45309;">
+<span style="font-size: 18px;">⚠️</span>
+<span>SC/ST HOLDING WITH COLLECTOR CONDITIONAL SANCTION ORDER</span>
+</div>
+<div style="font-size: 11px; margin-top: 3px; color: #92400E;">
+Tenure holder belongs to SC category. Official Collector / DM Sanction file registered under Section 98 UP Revenue Code. Physical file verification at Collectorate Registry branch required before execution.
+</div>
+</div>
+"""
+
     raw_html = f"""
 <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 14px; color: #0F172A; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+{sc_st_alert_html}
 {flag_alert_html}
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
 <div style="flex: 1 1 260px;">
@@ -124,6 +161,7 @@ def render_farmland_summary_card_html(
 <span style="background: #DCFCE7; color: #166534; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BBF7D0;">{item.get('regional_district', 'Varanasi')} • {item.get('regional_state', 'UP')}</span>
 <span style="background: #DBEAFE; color: #1E40AF; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BFDBFE;">{item.get('sourcing_tier_badge', '🏛️ Tier 1: Govt Registry')}</span>
 <span style="background: #E0F2FE; color: #0369A1; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BAE6FD;">{dist_ring}</span>
+{sc_st_badge}
 {fav_badge}
 {flag_badge}
 </div>
@@ -255,6 +293,8 @@ Score: {score}/100 ({item.get('due_diligence_grade', 'A+ Sovereign')})
 </div>
 <div style="font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
 <div><b>Khatauni / Khasra:</b> <span style="color: #0F172A;">{item.get('khasra_khatauni_number', 'Khatauni Verified')}</span></div>
+<div><b>Caste Category & Sec 98:</b> <span style="color: {'#DC2626' if item.get('is_sc_st_land') else '#059669'}; font-weight: 700;">{item.get('caste_category', 'General / OBC (Unrestricted)')} • {item.get('section_98_status', '✅ UNRESTRICTED: General/OBC Landholding')}</span></div>
+<div><b>Khatauni Caste Remarks:</b> <span style="color: {'#991B1B' if item.get('is_sc_st_land') else '#334155'}; font-size: 11px;">{item.get('khatauni_caste_remark', 'UP Bhulekh Certified Freehold')}</span></div>
 <div><b>Title:</b> <span style="color: #0F172A;">{item.get('title_status', 'Freehold Clear Title')} ({item.get('revenue_record_type', 'UP Bhulekh Certified')})</span></div>
 <div><b>Farmhouse:</b> <span style="color: #0F172A;">{item.get('farmhouse_permission', 'Permitted')}</span></div>
 <div><b>Road Access:</b> <span style="color: #0F172A;">{item.get('road_approach', '18-ft Bitumen Road')} • {item.get('fencing', 'Chain-Link')}</span></div>

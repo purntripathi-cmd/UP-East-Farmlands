@@ -577,7 +577,19 @@ chk_fake = st.sidebar.checkbox(
 st.session_state["show_ignored"] = chk_ignored
 st.session_state["show_fake"] = chk_fake
 
-# 6. Price per Acre Range Slider
+# 6. Caste Category & Section 98 UP Revenue Code Filter
+caste_filter = st.sidebar.selectbox(
+    "⚖️ Landowner Caste & Sec 98 Filter:",
+    options=[
+        "All Properties (Unrestricted & Flagged)",
+        "General / OBC Only (Unrestricted for All)",
+        "SC / ST Owned Only (🚨 Section 98 Flagged)"
+    ],
+    index=0,
+    help="Under Section 98 UP Revenue Code 2006, General category buyers cannot purchase SC/ST land without prior written Collector/DM sanction. Use this filter to exclude restricted lands."
+)
+
+# 7. Price per Acre Range Slider
 prices = [float(p.get("price_per_acre_lakhs", 25.0)) for p in all_parcels] if all_parcels else [25.0]
 min_price, max_price = min(prices), max(prices)
 selected_price_range = st.sidebar.slider(
@@ -587,7 +599,7 @@ selected_price_range = st.sidebar.slider(
     value=(int(min_price), int(max_price) + 2)
 )
 
-# 7. Sourcing Tier Filter
+# 8. Sourcing Tier Filter
 all_tiers = sorted(list(set(p.get("sourcing_tier", "Tier 1: Government Land Registry") for p in all_parcels)))
 selected_tiers = st.sidebar.multiselect(
     "Sourcing Tier / Provenance:",
@@ -595,7 +607,7 @@ selected_tiers = st.sidebar.multiselect(
     default=all_tiers
 )
 
-# 8. Weekly AI/ML Scanner Control in Sidebar
+# 9. Weekly AI/ML Scanner Control in Sidebar
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🤖 Weekly Duplicate-Free AI Engine")
 scanner_status = get_latest_scanner_status()
@@ -611,7 +623,7 @@ if st.sidebar.button("⚡ Run Weekly AI/ML Scan Now", use_container_width=True):
         )
         scanner_status = get_latest_scanner_status()
 
-# 9. CPU, RAM & Hosted Environment Telemetry Widget
+# 10. CPU, RAM & Hosted Environment Telemetry Widget
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🖥️ Hosted System Telemetry")
 render_html_block(render_system_telemetry_html())
@@ -640,6 +652,13 @@ for p in all_parcels:
 
     # Check Favorite Filter
     if show_fav_only and not is_favorite(pid, st.session_state["favorites"]):
+        continue
+
+    # Check Caste Category & Section 98 UP Revenue Code Filter
+    is_sc_st_parcel = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+    if caste_filter == "General / OBC Only (Unrestricted for All)" and is_sc_st_parcel:
+        continue
+    if caste_filter == "SC / ST Owned Only (🚨 Section 98 Flagged)" and not is_sc_st_parcel:
         continue
 
     # Check District Filter (Single selection / All Districts)
@@ -829,20 +848,55 @@ with view_tabs[0]:
             center_lng = float(display_parcels[0].get("lng", origin_lng))
             map_zoom = 11
 
+    # Assign persistent serial numbers matching Tab 1 table row order
+    for idx, p in enumerate(display_parcels):
+        p["_serial_no"] = idx + 1
+
+    # S.No. Map Locator Bar: Locate any specific property on Google Map
+    loc_c1, loc_c2 = st.columns([3.2, 1.2])
+    with loc_c1:
+        sno_options = ["🗺️ Overview (All Farmland Parcels)"] + [
+            f"#{idx + 1}. {p.get('name')} ({p.get('regional_district', '')} • {p.get('size_acres')} Ac / {round(float(p.get('size_acres', 0))*1.6, 2)} Bigha{' • 🚨 SC/ST' if (p.get('is_sc_st_land') or 'SC' in p.get('caste_category', '') or 'ST' in p.get('caste_category', '')) else ''})"
+            for idx, p in enumerate(display_parcels)
+        ]
+        selected_sno_label = st.selectbox(
+            "🎯 Locate Farmland by S.No. on Google Map:",
+            options=sno_options,
+            index=0,
+            key="sb_map_sno_locator",
+            help="Select any property by its exact Serial Number (#S.No.) to zoom directly into its parcel pin with high-precision Google satellite focus."
+        )
+    with loc_c2:
+        st.write("")
+        if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
+            if st.button("❌ Reset Map Focus", key="btn_reset_map_sno", use_container_width=True):
+                st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+                st.rerun()
+
+    focused_sno = None
+    if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
+        try:
+            focused_sno = int(selected_sno_label.split(".")[0].replace("#", "").strip())
+            target_p = display_parcels[focused_sno - 1]
+            center_lat = float(target_p["lat"])
+            center_lng = float(target_p["lng"])
+            map_zoom = 15
+        except Exception:
+            focused_sno = None
+
     # Map Layout & Legend Controls
     map_c1, map_c2 = st.columns([3, 1])
     with map_c2:
         st.markdown("#### 🧭 Map Legend")
         st.markdown(f"""
         - 🌟 **Dark Red Star:** Active Origin (**{center_short}**)
-        - 🟢 **20 km Ring:** Urban Fringe / Ring Road
-        - 🔵 **40 km Ring:** Intermediate Ring
-        - 🟡 **60 km Ring:** Regional Buffer
-        - 🟣 **80 km Ring:** Outer Perimeter
-        - 🔴 **100 km Ring:** Regional Boundary
-        - 🌿 **Green Pin:** Sovereign Grade A+ (Score ≥ 90)
-        - 🔷 **Blue Pin:** Institutional Grade A (Score 75-89)
-        - 💜 **Purple Pin:** Starred Favorite
+        - 🏷️ **Numbered Badges (#1, #2...):** Exact S.No. from Table Below
+        - 🚨 **Red Badge (#S.No. 🚨):** SC/ST Owned (Section 98 Barred for General)
+        - 💜 **Purple Badge (#S.No. ★):** Starred Favorite
+        - 🌿 **Green Badge (#S.No.):** Sovereign Grade A+ (Score ≥ 90)
+        - 🔷 **Blue Badge (#S.No.):** Institutional Grade A (Score 75-89)
+        - 🟡 **Amber Badge (#S.No.):** Operational Advisory (Score 60-74)
+        - 🎯 **Golden Ring:** Focused Property (Selected by S.No.)
         - 📍 **Red Target:** Pinned / Clicked Location
         """)
         show_concentric = st.checkbox("Overlay Concentric Buffer Rings", value=True)
@@ -872,7 +926,8 @@ with view_tabs[0]:
             center_lat=center_lat,
             center_lng=center_lng,
             zoom_start=map_zoom,
-            selected_pin=selected_pin_obj
+            selected_pin=selected_pin_obj,
+            focused_sno=focused_sno
         )
 
         st.caption("💡 **Tip:** Tap or click anywhere on the Google Map to pin coordinates and instantly add a new property!")
@@ -956,16 +1011,29 @@ with view_tabs[0]:
                 f"📐 **Purvanchal Land Units:** `{est_pakka_bigha:.2f}` Pakka Bigha (`{est_biswa:.1f}` Biswa / `{est_biswa:.1f}` Kattha) • **Total Deal Ticket:** `₹{est_cr:.2f} Cr`"
             )
 
-            f_seller1, f_seller2, f_seller3 = st.columns(3)
+            f_seller1, f_seller2 = st.columns(2)
             with f_seller1:
                 prop_seller_name = st.text_input("Landowner / Rep Name *", value="Landowner Representative")
             with f_seller2:
                 prop_seller_phone = st.text_input("Contact Mobile Phone *", value="+91 94150 12345")
-            with f_seller3:
+
+            f_caste1, f_caste2 = st.columns(2)
+            with f_caste1:
                 prop_seller_cat = st.selectbox(
                     "Seller Category",
                     options=["Direct Landowner / Farmer", "Broker / Mandi Aggregator", "Bank Distress Recovery Rep", "Govt Land Board"],
                     index=0
+                )
+            with f_caste2:
+                prop_caste_cat = st.selectbox(
+                    "Landowner Caste Category (UP Revenue Code Sec 98) *",
+                    options=[
+                        "General / OBC (Unrestricted)",
+                        "SC / Dalit Landholding (Sec 98 Restricted)",
+                        "ST Landholding (Sec 98 Restricted)"
+                    ],
+                    index=0,
+                    help="Under Section 98 UP Revenue Code 2006, land held by an SC/ST Bhumidhar cannot be transferred to a non-SC/ST person without prior written sanction from the District Magistrate / Collector."
                 )
 
             # Optional published news notice
@@ -990,6 +1058,7 @@ with view_tabs[0]:
                     contact_phone=prop_seller_phone,
                     seller_category=prop_seller_cat,
                     khasra_number=prop_khasra,
+                    caste_category=prop_caste_cat,
                     news_title=prop_news_title,
                     news_source=prop_news_source
                 )
@@ -1031,9 +1100,20 @@ with view_tabs[0]:
             r = routings.get(pid, {})
             crit = critique_cache.get(pid, {})
             is_f = is_favorite(pid, st.session_state["favorites"])
-            unit = p.get("unit_meta", {})
             f_info = get_property_flag(pid, st.session_state["property_flags"])
             status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
+
+            acres_val = float(p.get("size_acres", 0.0))
+            total_bigha_val = round(acres_val * 1.60, 2)
+
+            is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+            sec_stat = p.get("section_98_status", "")
+            if is_sc and ("Approved" in sec_stat or "CONDITIONAL" in sec_stat):
+                caste_badge = "⚠️ SC/ST (DM Sanctioned)"
+            elif is_sc:
+                caste_badge = "🚨 SC/ST: Barred (Sec 98)"
+            else:
+                caste_badge = "✅ General / OBC"
 
             tab1_rows.append({
                 "S.No.": idx + 1,
@@ -1044,8 +1124,9 @@ with view_tabs[0]:
                 f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
-                "Acres": p.get("size_acres"),
-                "Pakka Bigha": unit.get("pakka_bigha"),
+                "Acres": acres_val,
+                "Total Bigha": total_bigha_val,
+                "Caste / Sec 98 Flag": caste_badge,
                 "Price/Acre (₹L)": p.get("price_per_acre_lakhs"),
                 "Total (₹Cr)": p.get("total_price_cr"),
                 "Elevation (m)": p.get("elevation_m"),
@@ -1056,6 +1137,7 @@ with view_tabs[0]:
                 "Critique Risk Verdict": crit.get("critique_verdict_badge", "Pristine"),
                 "Top Negative Flag / Advisory": crit.get("negative_feedbacks_summary", "Clean Audit"),
                 "Govt Clearance": crit.get("primary_govt_clearance", "UP Bhulekh / IGRSUP Clear"),
+                "Khatauni Caste Remark": p.get("khatauni_caste_remark", "Shreni 1-Ka General Freehold"),
                 "Published News Platform": p.get("published_news_source"),
                 "Notice Date": p.get("published_news_date"),
                 "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
@@ -1067,8 +1149,10 @@ with view_tabs[0]:
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
             "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag", help="Section 98 UP Revenue Code 2006 compliance flag. SC/ST land cannot be purchased by General caste buyers without prior DM permission."),
         }
-        st.dataframe(df_tab1, use_container_width=True, height=450, column_config=tab1_col_config)
+        st.dataframe(df_tab1, use_container_width=True, height=450, column_config=tab1_col_config, hide_index=True)
 
         # Quick Flag & Ignore Moderation Center Expander
         with st.expander(f"🛡️ 🚫 Flagged & Ignored Listings Center ({len(get_ignored_ids(st.session_state['property_flags']))} Ignored, {len(get_fake_ids(st.session_state['property_flags']))} Fake)", expanded=False):
@@ -1125,10 +1209,14 @@ with view_tabs[1]:
     target_parcels = display_parcels if display_parcels else filtered_parcels
 
     if target_parcels:
-        farm_names = [
-            f"#{idx + 1}. {p['name']} — {p.get('regional_district', '')} ({routings.get(str(p['id']), {}).get('road_km', 0.0)} km from {center_short} | ₹{p.get('price_per_acre_lakhs')}L/Acre)"
-            for idx, p in enumerate(target_parcels)
-        ]
+        farm_names = []
+        for idx, p in enumerate(target_parcels):
+            bigha_v = round(float(p.get("size_acres", 0.0)) * 1.60, 2)
+            is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+            sc_badge = " • 🚨 SC/ST" if is_sc else ""
+            farm_names.append(
+                f"#{idx + 1}. {p['name']} — {p.get('regional_district', '')} ({routings.get(str(p['id']), {}).get('road_km', 0.0)} km | {bigha_v} Bigha | ₹{p.get('price_per_acre_lakhs')}L/Ac{sc_badge})"
+            )
         
         saved_idx = st.session_state.get("tab2_selected_idx", 0)
         if saved_idx >= len(target_parcels):
@@ -1246,6 +1334,18 @@ with view_tabs[2]:
             f_info = get_property_flag(pid, st.session_state["property_flags"])
             status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
 
+            acres_val = float(p.get("size_acres", 0.0))
+            total_bigha_val = round(acres_val * 1.60, 2)
+
+            is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+            sec_stat = p.get("section_98_status", "")
+            if is_sc and ("Approved" in sec_stat or "CONDITIONAL" in sec_stat):
+                caste_badge = "⚠️ SC/ST (DM Sanctioned)"
+            elif is_sc:
+                caste_badge = "🚨 SC/ST: Barred (Sec 98)"
+            else:
+                caste_badge = "✅ General / OBC"
+
             table_rows.append({
                 "S.No.": idx + 1,
                 "Fav": "⭐" if is_f else "—",
@@ -1255,8 +1355,10 @@ with view_tabs[2]:
                 f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
                 "Radial Ring": r.get("distance_ring"),
-                "Acres": p.get("size_acres"),
-                "Pakka Bigha": unit.get("pakka_bigha"),
+                "Acres": acres_val,
+                "Total Bigha": total_bigha_val,
+                "Biswa": round(total_bigha_val * 20, 1),
+                "Caste / Sec 98 Flag": caste_badge,
                 "Price/Acre (₹L)": p.get("price_per_acre_lakhs"),
                 "Total (₹Cr)": p.get("total_price_cr"),
                 "Elevation (m)": p.get("elevation_m"),
@@ -1267,6 +1369,7 @@ with view_tabs[2]:
                 "Critique Verdict": crit.get("critique_risk_verdict"),
                 "Negative Caveats & Grievances": crit.get("negative_feedbacks_summary"),
                 "Govt Clearance": crit.get("primary_govt_clearance"),
+                "Khatauni Caste Remark": p.get("khatauni_caste_remark", "UP Bhulekh Shreni 1-Ka Freehold"),
                 "News Platform": p.get("published_news_source"),
                 "Notice Type": p.get("notice_or_legal_type"),
                 "Khasra No": p.get("khasra_khatauni_number"),
@@ -1279,8 +1382,10 @@ with view_tabs[2]:
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
             "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag", help="Section 98 UP Revenue Code 2006 compliance flag."),
         }
-        st.dataframe(df_table, use_container_width=True, height=500, column_config=tab3_col_config)
+        st.dataframe(df_table, use_container_width=True, height=500, column_config=tab3_col_config, hide_index=True)
     else:
         st.info("No records matching filter.")
 
@@ -1336,15 +1441,27 @@ with view_tabs[4]:
             pid = str(p.get("id"))
             r = routings.get(pid, {})
             crit = critique_cache.get(pid, {})
-            unit = p.get("unit_meta", {})
+            acres_val = float(p.get("size_acres", 0.0))
+            total_bigha_val = round(acres_val * 1.60, 2)
+
+            is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
+            sec_stat = p.get("section_98_status", "")
+            if is_sc and ("Approved" in sec_stat or "CONDITIONAL" in sec_stat):
+                caste_badge = "⚠️ SC/ST (DM Sanctioned)"
+            elif is_sc:
+                caste_badge = "🚨 SC/ST: Barred (Sec 98)"
+            else:
+                caste_badge = "✅ General / OBC"
+
             fav_matrix_rows.append({
                 "S.No.": idx + 1,
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
                 f"Road Distance from {center_short[:20]} (km)": r.get("road_km"),
                 "Driving Time": r.get("driving_time_display"),
-                "Acres": p.get("size_acres"),
-                "Pakka Bigha": unit.get("pakka_bigha"),
+                "Acres": acres_val,
+                "Total Bigha": total_bigha_val,
+                "Caste / Sec 98 Flag": caste_badge,
                 "Price / Acre (₹ Lakhs)": p.get("price_per_acre_lakhs"),
                 "Total Price (₹ Cr)": p.get("total_price_cr"),
                 "Soil pH": p.get("soil_ph"),
@@ -1361,8 +1478,10 @@ with view_tabs[4]:
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "District": st.column_config.TextColumn("District", pinned=True, width="medium"),
+            "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha)", format="%.2f"),
+            "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag"),
         }
-        st.dataframe(df_fav, use_container_width=True, column_config=fav_col_config)
+        st.dataframe(df_fav, use_container_width=True, column_config=fav_col_config, hide_index=True)
 
         if st.button("🗑️ Clear All Favorites", type="secondary"):
             st.session_state["favorites"] = set()
