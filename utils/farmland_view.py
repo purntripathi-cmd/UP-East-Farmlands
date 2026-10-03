@@ -339,6 +339,10 @@ def render_critique_ai_card_html(item: Dict[str, Any]) -> str:
     jansunwai_url = govt.get("jansunwai_url", "https://jansunwai.up.nic.in/TrackComplaint")
     groundwater_url = govt.get("groundwater_url", "https://upgroundwater.in/noc-status")
 
+    audit_cycle = critique.get("audit_cycle", "Weekly Automated Cycle")
+    last_refresh = critique.get("last_weekly_refresh", "Active")
+    next_refresh = critique.get("next_weekly_refresh", "Scheduled in 7 Days")
+
     feedback_items_html = "".join([
         f'<div style="margin-bottom: 4px; color: #991B1B; font-size: 11.5px; line-height: 1.4;">• {fb}</div>'
         for fb in feedbacks
@@ -353,6 +357,10 @@ def render_critique_ai_card_html(item: Dict[str, Any]) -> str:
 <span style="background: #FEF2F2; color: #B91C1C; font-weight: 800; font-size: 12.5px; padding: 3px 10px; border-radius: 6px; border: 1px solid #FECACA;">
 Score: {score}/100 ({badge})
 </span>
+</div>
+<div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 8px; padding: 6px 12px; font-size: 11.5px; color: #166534; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+<span>📅 <b>Critique AI Weekly Cycle:</b> {audit_cycle}</span>
+<span style="background: #DCFCE7; padding: 2px 8px; border-radius: 4px; border: 1px solid #86EFAC;">🔄 Auto-refreshes Every 7 Days • Next: {next_refresh[:11]}</span>
 </div>
 <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #0F172A; margin-bottom: 10px;">
 {verdict}

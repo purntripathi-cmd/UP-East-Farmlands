@@ -767,3 +767,91 @@ def test_table_column_header_text_wrapping_and_compact_headers():
     assert '"Road Dist (km)"' in app_code
 
 
+def test_critique_ai_weekly_refresh_engine():
+    """Verifies that Critique AI includes weekly refresh metadata and deterministic cycle cadence."""
+    from utils.critic_ai import get_weekly_audit_metadata, evaluate_property_critique
+    from utils.farmland_view import render_critique_ai_card_html
+
+    meta = get_weekly_audit_metadata()
+    assert "cycle_key" in meta
+    assert "cycle_label" in meta
+    assert "Week" in meta["cycle_label"]
+    assert "Weekly" in meta["cadence"] and "7 Days" in meta["cadence"]
+    assert meta["days_remaining"] >= 0
+    assert "next_refresh_due" in meta
+
+    sample_farm = {
+        "id": "agri200_var_001",
+        "name": "Babatpur Agro Parcel",
+        "soil_ph": 7.2,
+        "water_tds_ppm": 320,
+        "due_diligence_score": 88
+    }
+    critique = evaluate_property_critique(sample_farm)
+    assert "Weekly" in critique["weekly_refresh_cadence"]
+    assert "audit_cycle" in critique
+    assert critique["audit_cycle"] == meta["cycle_label"]
+    assert "next_weekly_refresh" in critique
+
+    html = render_critique_ai_card_html(critique)
+    assert "Critique AI Weekly Cycle:" in html
+    assert "Auto-refreshes Every 7 Days" in html
+
+
+def test_favorites_checkbox_selective_deletion_preserves_remaining(monkeypatch):
+    """Verifies that selective deletion of specific favorites preserves all other favorited items."""
+    import tempfile
+    from utils.favorites_manager import save_raw_favorites, load_favorites, remove_favorite, add_favorite
+
+    # Create temporary isolated favorites file
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tf:
+        temp_file = tf.name
+
+    try:
+        monkeypatch.setattr("utils.favorites_manager.get_favorites_file_path", lambda: temp_file)
+
+        # Seed with 3 favorites
+        add_favorite("p1", username="VPT")
+        add_favorite("p2", username="PPT")
+        add_favorite("p3", username="Guest-1")
+
+        cur_favs = load_favorites()
+        assert cur_favs == {"p1", "p2", "p3"}
+
+        # Delete only p2 (simulating checkbox select and delete)
+        remove_favorite("p2")
+
+        remaining_favs = load_favorites()
+        assert "p2" not in remaining_favs
+        assert "p1" in remaining_favs  # Preserved!
+        assert "p3" in remaining_favs  # Preserved!
+        assert len(remaining_favs) == 2
+
+    finally:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+
+def test_top_text_visibility_and_sidebar_flex_css():
+    """Verifies CSS contains institutional padding to prevent top text cut-off and margin clipping."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    # Block container top and side padding
+    assert "padding-top: 3.5rem !important;" in app_code
+    assert "padding-left: 2rem !important;" in app_code
+    assert "padding-right: 2rem !important;" in app_code
+
+    # Sidebar top padding
+    assert "section[data-testid=\"stSidebar\"] > div:first-child" in app_code
+    
+    # Tab 5 preserved S.No. and Property ID column headers
+    assert '"Tab 1 S.No."' in app_code
+    assert '"Property ID"' in app_code
+
+    # 1-click Starred Favorites toggle in KPI
+    assert "btn_kpi_fav_filter_toggle" in app_code
+
+
+

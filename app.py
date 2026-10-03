@@ -67,7 +67,7 @@ from utils.weekly_ml_scanner import (
     run_weekly_scan,
     get_latest_scanner_status
 )
-from utils.critic_ai import evaluate_property_critique
+from utils.critic_ai import evaluate_property_critique, get_weekly_audit_metadata
 from utils.system_telemetry import get_system_telemetry, render_system_telemetry_html
 from utils.google_map_view import create_google_farmland_map
 from utils.farmland_view import (
@@ -105,10 +105,13 @@ st.markdown("""
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
     .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 3.5rem !important;
         padding-bottom: 2.5rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
+        box-sizing: border-box !important;
     }
 
     /* Streamlit Top Header & Navigation Bar: Pure Seamless White (Zero Black) */
@@ -211,15 +214,26 @@ st.markdown("""
         border-right: 1px solid #E2E8F0 !important;
         color: #0F172A !important;
     }
-    section[data-testid="stSidebar"] > div {
-        padding-top: 1.2rem !important;
-        padding-left: 1.1rem !important;
-        padding-right: 1.1rem !important;
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 3.5rem !important;
+        padding-left: 1.2rem !important;
+        padding-right: 1.2rem !important;
     }
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
     section[data-testid="stSidebar"] h3 {
         color: #0F172A !important;
+    }
+
+    /* Flex alignment to prevent sidebar from overlapping or clipping main container */
+    [data-testid="stAppViewContainer"] {
+        display: flex !important;
+        flex-direction: row !important;
+    }
+    section.main {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        overflow-x: auto !important;
     }
 
     /* Keep left sidebar visible on desktop and tablet without auto-collapsing */
@@ -228,7 +242,6 @@ st.markdown("""
             transform: none !important;
             display: block !important;
             visibility: visible !important;
-            position: relative !important;
         }
         button[data-testid="baseButton-header"],
         [data-testid="stSidebarCollapseButton"],
@@ -495,9 +508,9 @@ st.markdown("""
     /* Modern Mobile Responsive Layout */
     @media (max-width: 768px) {
         .block-container {
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-            padding-top: 0.6rem !important;
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+            padding-top: 3.75rem !important;
         }
         /* Wrap KPI metrics row into 2 neat columns on phone screens */
         div[data-testid="stHorizontalBlock"] {
@@ -566,6 +579,8 @@ def load_farmlands_dataset():
 
 # Load Base Datasets
 all_parcels = load_farmlands_dataset()
+# Master Tab 1 Serial Number lookup mapping (preserved across all tabs, maps, and favorites)
+master_sno_map = {str(p["id"]): idx + 1 for idx, p in enumerate(all_parcels)}
 landmarks = load_landmarks()
 landmark_dict = {lm["name"]: lm for lm in landmarks}
 default_lm_name = next((lm["name"] for lm in landmarks if lm.get("is_default")), landmarks[0]["name"])
@@ -863,9 +878,9 @@ for p in all_parcels:
         if flag_type == "fake" and not st.session_state["show_fake"]:
             continue
 
-    # Check Multi-User Favorite Filter
-    if "⭐ All Favorites" in sel_fav_filter:
-        if not is_favorite(pid):
+    # Check Multi-User Favorite Filter or 1-Click Starred KPI Toggle
+    if st.session_state.get("show_only_favorites_in_tab1", False) or "⭐ All Favorites" in sel_fav_filter:
+        if not is_favorite(pid, cached_set=st.session_state["favorites"]):
             continue
     elif sel_fav_filter.startswith("👤 ") and "'s Favorites" in sel_fav_filter:
         target_uname = sel_fav_filter.split("👤 ")[1].split("'s Favorites")[0].strip()
@@ -941,12 +956,37 @@ with kpi3:
         st.metric("Avg Rate / Acre", "N/A")
 with kpi4:
     fav_count = len(st.session_state["favorites"])
-    st.metric("Starred Favorites", f"{fav_count} Parcels", "Shortlist")
+    is_fav_filter_on = st.session_state.get("show_only_favorites_in_tab1", False)
+    st.metric(
+        "Starred Favorites",
+        f"{fav_count} Parcels",
+        "Filtered Active" if is_fav_filter_on else "Shortlist"
+    )
+    if is_fav_filter_on:
+        if st.button("🌐 Show All Holdings", key="btn_kpi_fav_filter_toggle", use_container_width=True, help="Reset filter to show all properties"):
+            st.session_state["show_only_favorites_in_tab1"] = False
+            st.session_state["fav_user_filter"] = "All Properties (Inventory & Favorites)"
+            st.rerun()
+    else:
+        if st.button(f"⭐ View {fav_count} Favorites", key="btn_kpi_fav_filter_toggle", use_container_width=True, help="Filter app to display only your starred favorites"):
+            st.session_state["show_only_favorites_in_tab1"] = True
+            st.session_state["fav_user_filter"] = "⭐ All Favorites"
+            st.rerun()
 with kpi5:
     sys_tel = get_system_telemetry()
     st.metric("Host CPU / RAM", f"{sys_tel['app_cpu_pct']}% CPU", f"{sys_tel['app_rss_mb']}MB RSS ({sys_tel['host_ram_used_pct']}% Host)")
 
 st.markdown("---")
+
+if st.session_state.get("show_only_favorites_in_tab1", False):
+    fb_c1, fb_c2 = st.columns([3.8, 1.2])
+    with fb_c1:
+        st.info(f"⭐ **Viewing {len(filtered_parcels)} Starred Favorites Only** across Google Map, Dossier Telemetry, and Tables. [Click 'Show All Holdings' to restore full inventory].")
+    with fb_c2:
+        if st.button("✖️ Show All Holdings", key="btn_clear_fav_filter_banner", use_container_width=True):
+            st.session_state["show_only_favorites_in_tab1"] = False
+            st.session_state["fav_user_filter"] = "All Properties (Inventory & Favorites)"
+            st.rerun()
 
 # -------------------------------------------------------------
 # TAB NAVIGATION (Clean, focused strictly on Farmlands)
@@ -1371,7 +1411,7 @@ with view_tabs[0]:
             fav_cell = f"⭐ {', '.join(fav_u)}" if fav_u else "—"
 
             tab1_rows.append({
-                "S.No.": idx + 1,
+                "S.No.": p.get("_serial_no", master_sno_map.get(pid, idx + 1)),
                 "Fav / Shortlisted By": fav_cell,
                 "Estate Name": p.get("name"),
                 "Status": status_text,
@@ -1518,17 +1558,31 @@ with view_tabs[1]:
     st.markdown("### 🔍 Detailed Farmland Telemetry, Critique AI & Legal Audit")
     st.caption("Inspect complete dossiers with soil parameters, groundwater TDS, independent critique risk findings, and UP Bhulekh verified records.")
 
+    # Weekly Critique AI Audit Telemetry Banner
+    crit_meta = get_weekly_audit_metadata()
+    cr_b1, cr_b2 = st.columns([3.5, 1.5])
+    with cr_b1:
+        st.info(f"📅 **Independent Critique AI Weekly Audit Engine:** Active Cycle **{crit_meta['cycle_label']}** • Cadence: {crit_meta['cadence']} • Next cycle re-audit in **{crit_meta['days_remaining']} days** ({crit_meta['next_refresh_due'][:11]}).")
+    with cr_b2:
+        if st.button("🔄 Force Weekly Re-audit Now", key="btn_force_critique_reaudit_t2", use_container_width=True):
+            st.cache_data.clear()
+            st.session_state["favorites"] = load_favorites()
+            st.success(f"✅ Re-audited all holdings under weekly cycle {crit_meta['cycle_key']}!")
+            st.rerun()
+
     # Align target parcels with Tab 1 display parcels
     target_parcels = display_parcels if display_parcels else filtered_parcels
 
     if target_parcels:
         farm_names = []
         for idx, p in enumerate(target_parcels):
+            pid_cur = str(p["id"])
+            sno_cur = master_sno_map.get(pid_cur, idx + 1)
             bigha_v = round(float(p.get("size_acres", 0.0)) * 1.60, 2)
             is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
             sc_badge = " • 🚨 SC/ST" if is_sc else ""
             farm_names.append(
-                f"#{idx + 1}. {p['name']} — {p.get('regional_district', '')} ({routings.get(str(p['id']), {}).get('road_km', 0.0)} km | {bigha_v} Bigha | ₹{p.get('price_per_acre_lakhs')}L/Ac{sc_badge})"
+                f"#{sno_cur}. {p['name']} — {p.get('regional_district', '')} ({routings.get(pid_cur, {}).get('road_km', 0.0)} km | {bigha_v} Bigha | ₹{p.get('price_per_acre_lakhs')}L/Ac{sc_badge})"
             )
         
         saved_idx = st.session_state.get("tab2_selected_idx", 0)
@@ -1547,10 +1601,11 @@ with view_tabs[1]:
         active_farm = target_parcels[selected_farm_idx]
         active_pid = str(active_farm["id"])
         active_routing = routings[active_pid]
+        active_sno = master_sno_map.get(active_pid, selected_farm_idx + 1)
         cur_fav_users = get_users_for_parcel(active_pid, raw_fav_records)
         is_fav = bool(cur_fav_users)
 
-        st.markdown(f"#### 🏷️ Property Dossier: #{selected_farm_idx + 1}. {active_farm.get('name')} ({active_farm.get('regional_district')})")
+        st.markdown(f"#### 🏷️ Property Dossier: #{active_sno}. {active_farm.get('name')} ({active_farm.get('regional_district')})")
 
         # Action Controls: Multi-User Favorites, Ignore List, Fake Listing Flag
         active_flag_info = get_property_flag(active_pid, st.session_state["property_flags"])
@@ -1701,7 +1756,7 @@ with view_tabs[2]:
                 caste_badge = "✅ General / OBC"
 
             table_rows.append({
-                "S.No.": idx + 1,
+                "S.No.": master_sno_map.get(pid, idx + 1),
                 "Fav": "⭐" if is_f else "—",
                 "Estate Name": p.get("name"),
                 "Status": status_text,
@@ -1843,7 +1898,8 @@ with view_tabs[4]:
                 caste_badge = "✅ General / OBC"
 
             fav_matrix_rows.append({
-                "S.No.": idx + 1,
+                "Tab 1 S.No.": master_sno_map.get(pid, idx + 1),
+                "Property ID": pid,
                 "Favorited By": ", ".join(cur_u_list) if cur_u_list else "—",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
@@ -1863,9 +1919,10 @@ with view_tabs[4]:
                 "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
             })
         df_fav = pd.DataFrame(fav_matrix_rows)
-        # Freeze first 3 columns (S.No., Favorited By, Estate Name)
+        # Freeze first 4 columns (Tab 1 S.No., Property ID, Favorited By, Estate Name)
         fav_col_config = {
-            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+            "Tab 1 S.No.": st.column_config.NumberColumn("Tab 1 S.No.", help="Serial Number identical to Tab 1 inventory and Google Map pins", pinned=True, width="small"),
+            "Property ID": st.column_config.TextColumn("Property ID", help="Unique Master Property ID", pinned=True, width="small"),
             "Favorited By": st.column_config.TextColumn("Favorited By", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "District": st.column_config.TextColumn("District", width="small"),
@@ -1882,18 +1939,45 @@ with view_tabs[4]:
         }
         st.dataframe(df_fav, use_container_width=True, height=450, column_config=fav_col_config, hide_index=True)
 
-        clr_c1, clr_c2 = st.columns(2)
-        with clr_c1:
+        st.markdown("#### 🗑️ Select & Delete Shortlisted Favorites")
+        st.caption("Check the boxes next to the properties you want to remove, then click 'Delete Selected Favorites'. Unselected favorites are preserved in permanent storage.")
+
+        del_sel_pids = []
+        c_chk1, c_chk2 = st.columns(2)
+        for i, p in enumerate(fav_parcels):
+            pid = str(p.get("id"))
+            t1_sno = master_sno_map.get(pid, i + 1)
+            col_target = c_chk1 if i % 2 == 0 else c_chk2
+            cur_u = get_users_for_parcel(pid, raw_fav_records)
+            u_lbl = f" [Starred by: {', '.join(cur_u)}]" if cur_u else ""
+            with col_target:
+                if st.checkbox(
+                    f"**#{t1_sno}**. {p.get('name')} (`{pid}`) — *{p.get('regional_district')}*{u_lbl}",
+                    key=f"chk_fav_del_{pid}"
+                ):
+                    del_sel_pids.append(pid)
+
+        btn_c1, btn_c2, btn_c3 = st.columns([1.6, 1.4, 1.8])
+        with btn_c1:
+            has_sel = len(del_sel_pids) > 0
+            del_lbl = f"🗑️ Delete Selected ({len(del_sel_pids)}) Favorites" if has_sel else "🗑️ Delete Selected Favorites"
+            if st.button(del_lbl, disabled=not has_sel, key="btn_del_selected_favs", use_container_width=True):
+                for pid_to_del in del_sel_pids:
+                    remove_favorite(pid_to_del, username=target_u_name if target_u_name else None)
+                st.session_state["favorites"] = load_favorites()
+                st.success(f"✅ Deleted {len(del_sel_pids)} selected favorite(s). Remaining saved favorites are safely preserved.")
+                st.rerun()
+        with btn_c2:
             if target_u_name:
-                if st.button(f"🗑️ Clear {target_u_name}'s Favorites", use_container_width=True):
+                if st.button(f"🗑️ Clear All {target_u_name}'s", key="btn_clear_user_favs", use_container_width=True):
                     clear_all_favorites(username=target_u_name)
                     st.session_state["favorites"] = load_favorites()
                     st.success(f"Cleared all favorites for {target_u_name}.")
                     st.rerun()
             else:
-                st.caption("Select an investor above to clear only their favorites.")
-        with clr_c2:
-            if st.button("🗑️ Clear All Favorites (Across All Users)", use_container_width=True):
+                st.caption("Filter by investor above to clear individual shortlist.")
+        with btn_c3:
+            if st.button("🗑️ Clear All Favorites (All Users)", key="btn_clear_all_favs", use_container_width=True):
                 clear_all_favorites()
                 st.session_state["favorites"] = load_favorites()
                 st.success("All favorites across all users cleared.")
