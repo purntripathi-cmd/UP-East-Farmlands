@@ -199,6 +199,10 @@ def test_favorites_manager():
     test_id = "test_fav_xyz_123"
     toggle_favorite(test_id)
     assert is_favorite(test_id)
+    # Verify backward compatibility when 2nd argument is a set
+    fav_set = {test_id, "other_id"}
+    assert is_favorite(test_id, fav_set)
+    assert not is_favorite("not_in_set", fav_set)
     toggle_favorite(test_id)
     assert not is_favorite(test_id)
 

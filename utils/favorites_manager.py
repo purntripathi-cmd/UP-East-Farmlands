@@ -178,14 +178,24 @@ def toggle_favorite(parcel_id: str, username: str = "VPT") -> bool:
         return True
 
 
-def is_favorite(parcel_id: str, username: Optional[str] = None, cached_set: Optional[Set[str]] = None) -> bool:
+def is_favorite(
+    parcel_id: str,
+    username: Optional[Any] = None,
+    cached_set: Optional[Set[str]] = None
+) -> bool:
     """
     Checks whether a parcel ID is favorited.
-    - If username is specified: checks if favorited by that user.
+    - If username is a set/list/tuple: treated as cached_set (backward compatibility).
+    - If username is a string: checks if favorited by that user.
     - If username is None or 'All Users': checks if favorited by ANY user.
     - If cached_set is provided and username is None: directly checks membership in cached_set.
     """
     pid = str(parcel_id)
+    # Backward compatibility: handle 2nd positional argument passed as a collection/set of fav IDs
+    if isinstance(username, (set, list, tuple)):
+        cached_set = set(username)
+        username = None
+
     if cached_set is not None and (username is None or username in ("All Users", "All", "")):
         return pid in cached_set
 
@@ -193,8 +203,11 @@ def is_favorite(parcel_id: str, username: Optional[str] = None, cached_set: Opti
     if not username or username in ("All Users", "All", ""):
         return any(r.get("parcel_id") == pid for r in records)
 
-    clean_user = username.strip().lower()
-    return any(r.get("parcel_id") == pid and r.get("username", "").strip().lower() == clean_user for r in records)
+    if isinstance(username, str):
+        clean_user = username.strip().lower()
+        return any(r.get("parcel_id") == pid and r.get("username", "").strip().lower() == clean_user for r in records)
+
+    return False
 
 
 def get_users_for_parcel(parcel_id: str, raw_records: Optional[List[Dict[str, Any]]] = None) -> List[str]:

@@ -1273,7 +1273,7 @@ with view_tabs[0]:
             pid = str(p.get("id"))
             r = routings.get(pid, {})
             crit = critique_cache.get(pid, {})
-            is_f = is_favorite(pid, st.session_state["favorites"])
+            is_f = is_favorite(pid, cached_set=st.session_state["favorites"])
             f_info = get_property_flag(pid, st.session_state["property_flags"])
             status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
 
@@ -1592,7 +1592,7 @@ with view_tabs[2]:
             pid = str(p.get("id"))
             r = routings[pid]
             crit = critique_cache[pid]
-            is_f = is_favorite(pid, st.session_state["favorites"])
+            is_f = is_favorite(pid, cached_set=st.session_state["favorites"])
             unit = p.get("unit_meta", {})
             f_info = get_property_flag(pid, st.session_state["property_flags"])
             status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
