@@ -43,6 +43,17 @@ from utils.favorites_manager import (
     is_favorite,
     filter_favorite_parcels
 )
+from utils.property_flags_manager import (
+    load_property_flags,
+    set_property_flag,
+    remove_property_flag,
+    get_property_flag,
+    is_fake,
+    is_ignored,
+    get_ignored_ids,
+    get_fake_ids,
+    filter_parcels_by_flag_status
+)
 from utils.weekly_ml_scanner import (
     run_weekly_scan,
     get_latest_scanner_status
@@ -399,6 +410,15 @@ district_choices = ["All Districts (UP East)"] + all_districts
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = load_favorites()
 
+if "property_flags" not in st.session_state:
+    st.session_state["property_flags"] = load_property_flags()
+
+if "show_ignored" not in st.session_state:
+    st.session_state["show_ignored"] = False
+
+if "show_fake" not in st.session_state:
+    st.session_state["show_fake"] = False
+
 if "map_clicked_coord" not in st.session_state:
     st.session_state["map_clicked_coord"] = None
 
@@ -439,6 +459,17 @@ def sync_center_from_sidebar():
 st.sidebar.image("https://img.icons8.com/fluency/96/wheat.png", width=60)
 st.sidebar.title("Agro-Land Filters")
 st.sidebar.caption("Varanasi & Purvanchal Concentric Corridor")
+
+# Manual Data Refresh Button in Sidebar
+if st.sidebar.button("🔄 Refresh Farmland Data Now", type="primary", use_container_width=True, key="btn_sb_refresh_top"):
+    with st.spinner("Refreshing farmland inventory, satellite telemetry, and road routing..."):
+        st.cache_data.clear()
+        scan_report = run_weekly_scan(all_parcels, force=True)
+        st.session_state["favorites"] = load_favorites()
+        st.session_state["property_flags"] = load_property_flags()
+        st.sidebar.success(f"✅ Data refreshed! Scanned {scan_report['parcels_scanned']} parcels ({scan_report['duplicates_suppressed']} duplicates suppressed).")
+        time.sleep(0.3)
+        st.rerun()
 
 # 1. District Filter in Sidebar (Synchronized with Tab 1)
 st.sidebar.markdown("### 📍 Filter by District")
@@ -487,7 +518,14 @@ critique_cache = {}
 for p in all_parcels:
     pid = str(p.get("id"))
     routings[pid] = compute_parcel_routing(p, origin_lat, origin_lng, active_lm["name"])
-    critique_cache[pid] = evaluate_property_critique(p)
+    base_crit = evaluate_property_critique(p)
+    if is_fake(pid, st.session_state["property_flags"]):
+        f_info = get_property_flag(pid, st.session_state["property_flags"])
+        base_crit["critique_risk_score"] = 0
+        base_crit["critique_risk_verdict"] = "🚨 CRITICAL: Fake Listing"
+        base_crit["critique_verdict_badge"] = "🚩 FAKE LISTING"
+        base_crit["negative_feedbacks_summary"] = f"CRITICAL FRAUD ALERT: {f_info.get('reason', 'Reported as fake listing')}."
+    critique_cache[pid] = base_crit
 
 # 3. Concentric Radial Distance Selector
 st.sidebar.markdown("### ⭕ Concentric Radial Buffer")
@@ -518,6 +556,26 @@ show_fav_only = st.sidebar.checkbox(
     value=False,
     help="Display only the parcels you have marked as favorite."
 )
+
+# 6. Listing Moderation & Ignore/Fake Filters
+st.sidebar.markdown("### 🛡️ Moderation & Quality Filters")
+ignored_count = len(get_ignored_ids(st.session_state["property_flags"]))
+fake_count = len(get_fake_ids(st.session_state["property_flags"]))
+
+chk_ignored = st.sidebar.checkbox(
+    f"👁️ Show Ignored Properties ({ignored_count})",
+    value=st.session_state["show_ignored"],
+    key="sb_chk_show_ignored",
+    help="Check to reveal properties you placed on the ignore list (hidden by default)."
+)
+chk_fake = st.sidebar.checkbox(
+    f"🚩 Show Fake Listings ({fake_count})",
+    value=st.session_state["show_fake"],
+    key="sb_chk_show_fake",
+    help="Check to reveal listings that have been flagged as fake or fraudulent."
+)
+st.session_state["show_ignored"] = chk_ignored
+st.session_state["show_fake"] = chk_fake
 
 # 6. Price per Acre Range Slider
 prices = [float(p.get("price_per_acre_lakhs", 25.0)) for p in all_parcels] if all_parcels else [25.0]
@@ -570,6 +628,15 @@ for p in all_parcels:
     price = float(p.get("price_per_acre_lakhs", 0.0))
     dist = p.get("regional_district", "")
     tier = p.get("sourcing_tier", "")
+
+    # Check Moderation Flags: Ignore List & Fake Listings
+    flag_info = get_property_flag(pid, st.session_state["property_flags"])
+    if flag_info:
+        flag_type = flag_info.get("flag")
+        if flag_type == "ignored" and not st.session_state["show_ignored"]:
+            continue
+        if flag_type == "fake" and not st.session_state["show_fake"]:
+            continue
 
     # Check Favorite Filter
     if show_fav_only and not is_favorite(pid, st.session_state["favorites"]):
@@ -938,7 +1005,20 @@ with view_tabs[0]:
     # PROPERTY SUMMARY TABLE IN TAB 1 (FILTERABLE BY DISTRICT)
     # -------------------------------------------------------------
     st.markdown("---")
-    st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
+    col_tab1_h1, col_tab1_h2 = st.columns([3.5, 1.2])
+    with col_tab1_h1:
+        st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
+    with col_tab1_h2:
+        if st.button("🔄 Refresh Data", key="btn_tab1_refresh_data", use_container_width=True):
+            with st.spinner("Refreshing farmland inventory, satellite telemetry, and road routing..."):
+                st.cache_data.clear()
+                scan_res = run_weekly_scan(all_parcels, force=True)
+                st.session_state["favorites"] = load_favorites()
+                st.session_state["property_flags"] = load_property_flags()
+                st.success(f"✅ Data refreshed! Scanned {scan_res['parcels_scanned']} parcels.")
+                time.sleep(0.3)
+                st.rerun()
+
     st.caption(
         f"Showing **{len(display_parcels)}** properties matching filters. All road driving distances and driving times are calculated from **{active_lm['name']}**.\n\n"
         f"💡 **Correlation Guide:** Each property's **S.No. (#1, #2, #3...)** corresponds directly to the property dropdown in **Tab 2 (🔍 Detailed Farmland Telemetry & Dossier)** for effortless cross-referencing."
@@ -952,11 +1032,14 @@ with view_tabs[0]:
             crit = critique_cache.get(pid, {})
             is_f = is_favorite(pid, st.session_state["favorites"])
             unit = p.get("unit_meta", {})
+            f_info = get_property_flag(pid, st.session_state["property_flags"])
+            status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
 
             tab1_rows.append({
                 "S.No.": idx + 1,
                 "Fav": "⭐" if is_f else "—",
                 "Estate Name": p.get("name"),
+                "Status": status_text,
                 "District": p.get("regional_district"),
                 f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
@@ -979,7 +1062,55 @@ with view_tabs[0]:
             })
 
         df_tab1 = pd.DataFrame(tab1_rows)
-        st.dataframe(df_tab1, use_container_width=True, height=450)
+        # Freeze first 3 columns (S.No., Fav, Estate Name)
+        tab1_col_config = {
+            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+            "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
+            "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+        }
+        st.dataframe(df_tab1, use_container_width=True, height=450, column_config=tab1_col_config)
+
+        # Quick Flag & Ignore Moderation Center Expander
+        with st.expander(f"🛡️ 🚫 Flagged & Ignored Listings Center ({len(get_ignored_ids(st.session_state['property_flags']))} Ignored, {len(get_fake_ids(st.session_state['property_flags']))} Fake)", expanded=False):
+            st.markdown("#### Moderation Registry: Manage Ignored Holdings & Fake Listings")
+            st.caption("Properties added to the Ignore List or flagged as Fake Listings are excluded from main inventory views by default to maintain a clean discovery pipeline.")
+
+            q_col1, q_col2, q_col3 = st.columns([2.5, 1.2, 1.2])
+            with q_col1:
+                mod_parcels_map = {f"#{idx+1}. {p['name']} ({p.get('regional_district')})": str(p['id']) for idx, p in enumerate(all_parcels)}
+                selected_mod_label = st.selectbox("Select Property to Moderate:", options=list(mod_parcels_map.keys()), key="sel_quick_mod")
+                selected_mod_pid = mod_parcels_map[selected_mod_label]
+            with q_col2:
+                if st.button("🚫 Add to Ignore List", key="btn_quick_add_ignore", use_container_width=True):
+                    set_property_flag(selected_mod_pid, "ignored", "Dismissed from active inventory by user")
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.warning("🚫 Property moved to Ignore List!")
+                    st.rerun()
+            with q_col3:
+                if st.button("🚩 Mark as Fake Listing", key="btn_quick_add_fake", use_container_width=True):
+                    set_property_flag(selected_mod_pid, "fake", "Reported as fraudulent or deceptive listing")
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.error("🚩 Marked as Fake Listing! Risk score downgraded to 0.")
+                    st.rerun()
+
+            current_flags = st.session_state["property_flags"]
+            if current_flags:
+                st.markdown("##### Currently Flagged Properties:")
+                for flagged_pid, f_data in list(current_flags.items()):
+                    m_parcel = next((p for p in all_parcels if str(p.get("id")) == flagged_pid), None)
+                    m_title = m_parcel.get("name", f"ID: {flagged_pid}") if m_parcel else f"ID: {flagged_pid}"
+                    f_badge = "🚩 Fake Listing" if f_data.get("flag") == "fake" else "🚫 Ignored"
+                    fc1, fc2, fc3 = st.columns([3, 2, 1])
+                    with fc1:
+                        st.markdown(f"**{m_title}** — `{f_badge}`")
+                    with fc2:
+                        st.caption(f"{f_data.get('reason')} ({f_data.get('timestamp')})")
+                    with fc3:
+                        if st.button("↩️ Restore", key=f"restore_btn_{flagged_pid}", use_container_width=True):
+                            remove_property_flag(flagged_pid)
+                            st.session_state["property_flags"] = load_property_flags()
+                            st.success("✅ Restored to active inventory!")
+                            st.rerun()
     else:
         st.info("No records matching filter or search query.")
 
@@ -1019,21 +1150,54 @@ with view_tabs[1]:
 
         st.markdown(f"#### 🏷️ Property Dossier: #{selected_farm_idx + 1}. {active_farm.get('name')} ({active_farm.get('regional_district')})")
 
-        # Favorite Toggle Button
-        fav_col1, fav_col2 = st.columns([1.5, 3.5])
+        # Action Controls: Favorites, Ignore List, Fake Listing Flag
+        active_flag_info = get_property_flag(active_pid, st.session_state["property_flags"])
+        active_flag_type = active_flag_info.get("flag") if active_flag_info else None
+
+        fav_col1, fav_col2, fav_col3 = st.columns([1.2, 1.2, 1.2])
         with fav_col1:
-            fav_btn_label = "★ Remove from Favorites" if is_fav else "☆ Add to Favorites"
+            fav_btn_label = "★ Remove Favorite" if is_fav else "☆ Add to Favorites"
             if st.button(fav_btn_label, key=f"fav_btn_tab2_{active_pid}", use_container_width=True):
                 new_state = toggle_favorite(active_pid)
                 st.session_state["favorites"] = load_favorites()
                 st.rerun()
 
         with fav_col2:
-            if is_fav:
-                st.success("⭐ This farmland is in your Shortlisted Favorites!")
+            if active_flag_type == "ignored":
+                if st.button("↩️ Un-ignore Property", key=f"unignore_btn_{active_pid}", use_container_width=True):
+                    remove_property_flag(active_pid)
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.success("✅ Property restored to active inventory!")
+                    st.rerun()
+            else:
+                if st.button("🚫 Add to Ignore List", key=f"ignore_btn_{active_pid}", use_container_width=True):
+                    set_property_flag(active_pid, "ignored", "Dismissed from active discovery by user")
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.warning("🚫 Property added to Ignore List!")
+                    st.rerun()
 
-        # 1. Top Summary Card (Clean HTML rendering with matching Serial Number)
-        render_html_block(render_farmland_summary_card_html(active_farm, active_routing, is_fav, serial_no=selected_farm_idx + 1))
+        with fav_col3:
+            if active_flag_type == "fake":
+                if st.button("✅ Remove Fake Flag", key=f"unfake_btn_{active_pid}", use_container_width=True):
+                    remove_property_flag(active_pid)
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.success("✅ Fake listing flag removed!")
+                    st.rerun()
+            else:
+                if st.button("🚩 Mark as Fake Listing", key=f"fake_btn_{active_pid}", use_container_width=True):
+                    set_property_flag(active_pid, "fake", "Reported by user as fraudulent or deceptive listing")
+                    st.session_state["property_flags"] = load_property_flags()
+                    st.error("🚩 Marked as Fake Listing! Risk score downgraded to 0.")
+                    st.rerun()
+
+        # 1. Top Summary Card (Clean HTML rendering with matching Serial Number & Moderation Banners)
+        render_html_block(render_farmland_summary_card_html(
+            active_farm,
+            active_routing,
+            is_fav,
+            serial_no=selected_farm_idx + 1,
+            flag_info=active_flag_info
+        ))
 
         # 2. Split Columns: Agronomics & Legal/News
         col_agri, col_legal = st.columns([1.5, 1.5])
@@ -1055,7 +1219,20 @@ with view_tabs[1]:
 # TAB 3: MASTER FARMLAND COMPARISON LEDGER
 # -------------------------------------------------------------
 with view_tabs[2]:
-    st.markdown("### 📊 Master Farmland Comparison Ledger")
+    col_tab3_h1, col_tab3_h2 = st.columns([3.5, 1.2])
+    with col_tab3_h1:
+        st.markdown("### 📊 Master Farmland Comparison Ledger")
+    with col_tab3_h2:
+        if st.button("🔄 Refresh Ledger Data", key="btn_tab3_refresh_data", use_container_width=True):
+            with st.spinner("Refreshing farmland inventory, satellite telemetry, and road routing..."):
+                st.cache_data.clear()
+                scan_res = run_weekly_scan(all_parcels, force=True)
+                st.session_state["favorites"] = load_favorites()
+                st.session_state["property_flags"] = load_property_flags()
+                st.success(f"✅ Data refreshed! Scanned {scan_res['parcels_scanned']} parcels.")
+                time.sleep(0.3)
+                st.rerun()
+
     st.caption(f"Comprehensive data ledger with road distance from **{active_lm['name']}**, Purvanchal land units (Pakka Bigha), water TDS, due diligence scores, Critique AI audits, and published news.")
 
     if filtered_parcels:
@@ -1066,11 +1243,14 @@ with view_tabs[2]:
             crit = critique_cache[pid]
             is_f = is_favorite(pid, st.session_state["favorites"])
             unit = p.get("unit_meta", {})
+            f_info = get_property_flag(pid, st.session_state["property_flags"])
+            status_text = "🚩 Fake" if is_fake(pid, st.session_state["property_flags"]) else ("🚫 Ignored" if is_ignored(pid, st.session_state["property_flags"]) else "Active")
 
             table_rows.append({
                 "S.No.": idx + 1,
                 "Fav": "⭐" if is_f else "—",
                 "Estate Name": p.get("name"),
+                "Status": status_text,
                 "District": p.get("regional_district"),
                 f"Road Dist from {center_short[:20]} (km)": r.get("road_km"),
                 "Drive Time": r.get("driving_time_display"),
@@ -1094,7 +1274,13 @@ with view_tabs[2]:
             })
 
         df_table = pd.DataFrame(table_rows)
-        st.dataframe(df_table, use_container_width=True, height=500)
+        # Freeze first 3 columns (S.No., Fav, Estate Name)
+        tab3_col_config = {
+            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+            "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
+            "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+        }
+        st.dataframe(df_table, use_container_width=True, height=500, column_config=tab3_col_config)
     else:
         st.info("No records matching filter.")
 
@@ -1169,7 +1355,14 @@ with view_tabs[4]:
                 "Top Negative Flag": crit.get("negative_feedbacks_summary"),
                 "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
             })
-        st.dataframe(pd.DataFrame(fav_matrix_rows), use_container_width=True)
+        df_fav = pd.DataFrame(fav_matrix_rows)
+        # Freeze first 3 columns (S.No., Estate Name, District)
+        fav_col_config = {
+            "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+            "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+            "District": st.column_config.TextColumn("District", pinned=True, width="medium"),
+        }
+        st.dataframe(df_fav, use_container_width=True, column_config=fav_col_config)
 
         if st.button("🗑️ Clear All Favorites", type="secondary"):
             st.session_state["favorites"] = set()

@@ -60,8 +60,14 @@ def _extract_crops_telemetry(item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, Any], is_fav: bool = False, serial_no: Any = None) -> str:
-    """Renders top summary card with road distance from active landmark, pricing, size, and serial number correlation."""
+def render_farmland_summary_card_html(
+    item: Dict[str, Any],
+    routing: Dict[str, Any],
+    is_fav: bool = False,
+    serial_no: Any = None,
+    flag_info: Optional[Dict[str, Any]] = None
+) -> str:
+    """Renders top summary card with road distance from active landmark, pricing, size, serial number, and moderation flags."""
     acres = item.get("size_acres", 0.0)
     pakka_bigha = round(acres * 1.60, 2)
     biswa = round(pakka_bigha * 20, 1)
@@ -80,9 +86,37 @@ def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, A
     
     s_no_badge = f'<span style="background: #E0E7FF; color: #3730A3; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid #C7D2FE;">🏷️ S.No. #{serial_no}</span>' if serial_no is not None else ''
     fav_badge = '<span style="background: #F3E8FF; color: #6B21A8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #DDD6FE;">⭐ Shortlisted Favorite</span>' if is_fav else ''
+    
+    # Moderation flag alerts & badges
+    flag_type = flag_info.get("flag") if flag_info else None
+    flag_badge = ""
+    flag_alert_html = ""
+    if flag_type == "fake":
+        flag_badge = '<span style="background: #FEE2E2; color: #991B1B; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #FCA5A5;">🚩 FAKE LISTING</span>'
+        flag_alert_html = f"""
+<div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; color: #991B1B; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 20px;">🚩</span>
+<div>
+<div><b>ALERT: Flagged by User as Fake Listing / Fraud</b></div>
+<div style="font-size: 11.5px; font-weight: 500; color: #B91C1C; margin-top: 2px;">{flag_info.get('reason', 'Deceptive or non-existent parcel details reported.')} • <i>Flagged at: {flag_info.get('timestamp', '')}</i></div>
+</div>
+</div>
+"""
+    elif flag_type == "ignored":
+        flag_badge = '<span style="background: #F1F5F9; color: #475569; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #CBD5E1;">🚫 IGNORED</span>'
+        flag_alert_html = f"""
+<div style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; color: #475569; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+<span style="font-size: 20px;">🚫</span>
+<div>
+<div><b>NOTICE: Property Added to Ignore List</b></div>
+<div style="font-size: 11.5px; font-weight: 500; color: #64748B; margin-top: 2px;">{flag_info.get('reason', 'Hidden from default discovery views.')} • <i>Ignored at: {flag_info.get('timestamp', '')}</i></div>
+</div>
+</div>
+"""
 
     raw_html = f"""
 <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 14px; color: #0F172A; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+{flag_alert_html}
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
 <div style="flex: 1 1 260px;">
 <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px;">
@@ -91,6 +125,7 @@ def render_farmland_summary_card_html(item: Dict[str, Any], routing: Dict[str, A
 <span style="background: #DBEAFE; color: #1E40AF; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BFDBFE;">{item.get('sourcing_tier_badge', '🏛️ Tier 1: Govt Registry')}</span>
 <span style="background: #E0F2FE; color: #0369A1; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; border: 1px solid #BAE6FD;">{dist_ring}</span>
 {fav_badge}
+{flag_badge}
 </div>
 <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0F172A; line-height: 1.3;">{item.get('name', 'Farmland Estate')}</h2>
 <div style="color: #64748B; font-size: 12.5px; margin-top: 3px;">📍 {item.get('location', '')}</div>

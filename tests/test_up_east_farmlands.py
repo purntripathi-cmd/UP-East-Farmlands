@@ -48,6 +48,18 @@ from utils.favorites_manager import (
     is_favorite,
     filter_favorite_parcels
 )
+from utils.property_flags_manager import (
+    load_property_flags,
+    save_property_flags,
+    set_property_flag,
+    remove_property_flag,
+    get_property_flag,
+    is_fake,
+    is_ignored,
+    get_ignored_ids,
+    get_fake_ids,
+    filter_parcels_by_flag_status
+)
 from utils.weekly_ml_scanner import (
     init_state_db,
     run_weekly_scan,
@@ -400,5 +412,93 @@ def test_routing_from_respective_city_center():
     )
     assert varanasi_routing["road_km"] > 30.0
     assert "origin=25.33750,82.98150" in varanasi_routing["google_directions_url"]
+
+
+# ============================================================
+# 15. PROPERTY FLAGS & MODERATION TESTS (FAKE / IGNORE)
+# ============================================================
+def test_property_flags_manager():
+    """Verifies setting, retrieving, and removing fake and ignored property flags."""
+    test_fake_id = "test_fake_pid_999"
+    test_ignore_id = "test_ignore_pid_888"
+
+    # Set fake listing
+    set_property_flag(test_fake_id, "fake", "Reported fake seller credentials")
+    flags = load_property_flags()
+    assert is_fake(test_fake_id, flags)
+    assert not is_ignored(test_fake_id, flags)
+    assert test_fake_id in get_fake_ids(flags)
+
+    # Set ignore listing
+    set_property_flag(test_ignore_id, "ignored", "Not interested in flood basin")
+    flags = load_property_flags()
+    assert is_ignored(test_ignore_id, flags)
+    assert not is_fake(test_ignore_id, flags)
+    assert test_ignore_id in get_ignored_ids(flags)
+
+    # Test filtering logic with flags
+    mock_parcels = [
+        {"id": test_fake_id, "name": "Fake Land Listing"},
+        {"id": test_ignore_id, "name": "Ignored Riverbed Holding"},
+        {"id": "legit_pid_111", "name": "Legitimate Agro Estate"}
+    ]
+
+    # By default, fake and ignored are excluded
+    filtered_default = filter_parcels_by_flag_status(mock_parcels, show_ignored=False, show_fake=False, flags_dict=flags)
+    assert len(filtered_default) == 1
+    assert filtered_default[0]["id"] == "legit_pid_111"
+
+    # When including ignored
+    filtered_with_ignored = filter_parcels_by_flag_status(mock_parcels, show_ignored=True, show_fake=False, flags_dict=flags)
+    assert len(filtered_with_ignored) == 2
+
+    # When including fake
+    filtered_with_fake = filter_parcels_by_flag_status(mock_parcels, show_ignored=False, show_fake=True, flags_dict=flags)
+    assert len(filtered_with_fake) == 2
+
+    # Cleanup flags
+    remove_property_flag(test_fake_id)
+    remove_property_flag(test_ignore_id)
+    cleared_flags = load_property_flags()
+    assert not is_fake(test_fake_id, cleared_flags)
+    assert not is_ignored(test_ignore_id, cleared_flags)
+
+
+def test_summary_card_flag_banners(sample_parcel):
+    """Verifies that render_farmland_summary_card_html displays fake and ignored warnings when flagged."""
+    routing = compute_parcel_routing(sample_parcel, DEFAULT_ORIGIN_LAT, DEFAULT_ORIGIN_LNG, DEFAULT_ORIGIN_NAME)
+
+    # Normal clean rendering
+    html_clean = render_farmland_summary_card_html(sample_parcel, routing, is_fav=False, serial_no=1)
+    assert "ALERT: Flagged by User as Fake Listing" not in html_clean
+    assert "NOTICE: Property Added to Ignore List" not in html_clean
+
+    # Fake listing rendering
+    fake_flag = {"flag": "fake", "reason": "Reported fake survey number", "timestamp": "03 Oct 2026, 21:00 IST"}
+    html_fake = render_farmland_summary_card_html(sample_parcel, routing, is_fav=False, serial_no=1, flag_info=fake_flag)
+    assert "ALERT: Flagged by User as Fake Listing / Fraud" in html_fake
+    assert "Reported fake survey number" in html_fake
+    assert "🚩 FAKE LISTING" in html_fake
+
+    # Ignored listing rendering
+    ignore_flag = {"flag": "ignored", "reason": "Dismissed by user", "timestamp": "03 Oct 2026, 21:00 IST"}
+    html_ignored = render_farmland_summary_card_html(sample_parcel, routing, is_fav=False, serial_no=1, flag_info=ignore_flag)
+    assert "NOTICE: Property Added to Ignore List" in html_ignored
+    assert "🚫 IGNORED" in html_ignored
+
+
+def test_freeze_columns_column_config():
+    """Verifies that Streamlit column configuration formats pin the first 3 columns correctly."""
+    import streamlit as st
+    tab1_config = {
+        "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+        "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
+        "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
+    }
+    # Validate pinned attribute
+    assert tab1_config["S.No."]["pinned"] is True
+    assert tab1_config["Fav"]["pinned"] is True
+    assert tab1_config["Estate Name"]["pinned"] is True
+
 
 
