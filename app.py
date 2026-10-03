@@ -5,10 +5,12 @@ Features:
 - Selectable Origin Landmark (Default: Kacheri Varanasi near Varuna Pul)
 - Concentric Distance Rings (20 km, 40 km, 60 km, 80 km, 100 km, 200 km buffer)
 - Google Maps Satellite Hybrid / Roadmap integration with concentric buffer overlays
+- Comprehensive Farmland Table in Tab 1 with full details summary
+- Independent Critique AI Engine (Negative feedback auditing, 8 risk vectors, Govt site verification)
 - Persistent User Favorites / Shortlisting system
 - Published News, Media Source, Date, and Verification Links
-- Weekly AI/ML Spectral & Provenance Scanner with SQLite persistence
-- Institutional 100-point Due Diligence Audit & Regional Land Unit Converters
+- Duplicate-Free Weekly AI/ML Spectral & Provenance Scanner with SQLite persistence
+- Real-time CPU, RAM, and Hosted Environment resource monitor
 - Multi-Sheet Excel & Master CSV Exporters
 """
 
@@ -36,11 +38,15 @@ from utils.weekly_ml_scanner import (
     run_weekly_scan,
     get_latest_scanner_status
 )
+from utils.critic_ai import evaluate_property_critique
+from utils.system_telemetry import get_system_telemetry, render_system_telemetry_html
 from utils.google_map_view import create_google_farmland_map
 from utils.farmland_view import (
+    clean_html,
     render_farmland_summary_card_html,
     render_agronomic_telemetry_html,
     render_legal_and_news_card_html,
+    render_critique_ai_card_html,
     render_seller_contact_card_html
 )
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
@@ -66,27 +72,29 @@ st.markdown("""
         border: 1px solid #334155;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 700;
         color: #10B981;
     }
     div[data-testid="stMetricLabel"] {
         color: #94A3B8;
-        font-size: 13px;
-    }
-    .news-badge {
-        background: #78350F;
-        color: #FDE68A;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
+        font-size: 12px;
     }
     .block-container {
-        padding-top: 1.5rem;
+        padding-top: 1.2rem;
         padding-bottom: 2rem;
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+def render_html_block(html_content: str):
+    """Safely renders HTML without triggering markdown code block parsing."""
+    cleaned = clean_html(html_content)
+    if hasattr(st, "html"):
+        st.html(cleaned)
+    else:
+        st.markdown(cleaned, unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -100,7 +108,7 @@ def load_farmlands_dataset():
     return []
 
 
-# Initialize session state for favorites and UI cache
+# Initialize session state for favorites
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = load_favorites()
 
@@ -115,7 +123,7 @@ default_lm_name = next((lm["name"] for lm in landmarks if lm.get("is_default")),
 # -------------------------------------------------------------
 # SIDEBAR FILTERS & CONTROLS
 # -------------------------------------------------------------
-st.sidebar.image("https://img.icons8.com/fluency/96/wheat.png", width=64)
+st.sidebar.image("https://img.icons8.com/fluency/96/wheat.png", width=60)
 st.sidebar.title("Agro-Land Filters")
 st.sidebar.caption("Varanasi & Purvanchal Concentric Corridor")
 
@@ -135,9 +143,11 @@ st.sidebar.info(f"**Active Zero-Point:** {active_lm['name']}\n\n*({active_lm.get
 
 # Precompute Dynamic Routing for all parcels relative to selected landmark
 routings = {}
+critique_cache = {}
 for p in all_parcels:
     pid = str(p.get("id"))
     routings[pid] = compute_parcel_routing(p, origin_lat, origin_lng, active_lm["name"])
+    critique_cache[pid] = evaluate_property_critique(p)
 
 # 2. Concentric Radial Distance Selector
 st.sidebar.markdown("### ⭕ Concentric Radial Buffer")
@@ -197,16 +207,24 @@ selected_tiers = st.sidebar.multiselect(
 
 # 8. Weekly AI/ML Scanner Control in Sidebar
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🤖 Weekly AI/ML Engine")
+st.sidebar.markdown("### 🤖 Weekly Duplicate-Free AI Engine")
 scanner_status = get_latest_scanner_status()
 st.sidebar.caption(f"**Last Scanned:** {scanner_status.get('completed_at', 'Scheduled')[:16]}")
 st.sidebar.caption(f"**Next Refresh Due:** {scanner_status.get('next_refresh_due', 'In 7 Days')[:10]}")
+st.sidebar.caption(f"**Duplicates Suppressed:** {scanner_status.get('duplicates_suppressed', 0)} (Zero Duplicate Policy)")
 
 if st.sidebar.button("⚡ Run Weekly AI/ML Scan Now", use_container_width=True):
-    with st.spinner("Executing Sentinel-2 NDVI calculation & MESSIS crop classification..."):
+    with st.spinner("Executing Sentinel-2 NDVI calculation & duplicate-free audit..."):
         report = run_weekly_scan(all_parcels, force=True)
-        st.sidebar.success(f"✅ Scan Complete! {report['parcels_scanned']} parcels refreshed.")
+        st.sidebar.success(
+            f"✅ Scan Complete! {report['parcels_scanned']} audited, {report['duplicates_suppressed']} duplicates suppressed, {report['in_place_updated']} updated in-place."
+        )
         scanner_status = get_latest_scanner_status()
+
+# 9. CPU, RAM & Hosted Environment Telemetry Widget
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🖥️ Hosted System Telemetry")
+render_html_block(render_system_telemetry_html())
 
 # -------------------------------------------------------------
 # FILTERING LOGIC
@@ -217,7 +235,6 @@ for p in all_parcels:
     routing = routings.get(pid, {})
     road_km = routing.get("road_km", 999.0)
     aerial_km = routing.get("aerial_km", 999.0)
-    dist_ring = routing.get("distance_ring", "")
     price = float(p.get("price_per_acre_lakhs", 0.0))
     dist = p.get("regional_district", "")
     tier = p.get("sourcing_tier", "")
@@ -266,7 +283,7 @@ filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km"
 # -------------------------------------------------------------
 st.title("🌾 UP East & Varanasi Farmlands Intelligence Platform")
 st.markdown(
-    f"**Concentric Agro-Intelligence & Due Diligence** | Origin Reference: **{active_lm['name']}**"
+    f"**Concentric Agro-Intelligence, Independent Critique AI & Due Diligence** | Origin Reference: **{active_lm['name']}**"
 )
 
 # Top KPI Metric Cards
@@ -289,7 +306,8 @@ with kpi4:
     fav_count = len(st.session_state["favorites"])
     st.metric("Starred Favorites", f"{fav_count} Parcels", "Shortlist")
 with kpi5:
-    st.metric("AI/ML Scan Status", "HEALTHY", f"Next: {scanner_status.get('next_refresh_due', '')[:10]}")
+    sys_tel = get_system_telemetry()
+    st.metric("Host CPU / RAM", f"{sys_tel['app_cpu_pct']}% CPU", f"{sys_tel['app_rss_mb']}MB RSS ({sys_tel['host_ram_used_pct']}% Host)")
 
 st.markdown("---")
 
@@ -297,8 +315,8 @@ st.markdown("---")
 # TAB NAVIGATION (Clean, focused strictly on Farmlands)
 # -------------------------------------------------------------
 view_tabs = st.tabs([
-    "🗺️ Interactive Google Map",
-    "🔍 Detailed Farmland Telemetry & Audit",
+    "🗺️ Interactive Google Map & Property Table",
+    "🔍 Detailed Farmland Telemetry & Legal Audit",
     "📊 Master Farmland Comparison Ledger",
     "📰 Published News & Caveat Notices",
     "⭐ Shortlisted Favorites Matrix",
@@ -306,7 +324,7 @@ view_tabs = st.tabs([
 ])
 
 # -------------------------------------------------------------
-# TAB 1: INTERACTIVE GOOGLE MAP
+# TAB 1: INTERACTIVE GOOGLE MAP & PROPERTY SUMMARY TABLE
 # -------------------------------------------------------------
 with view_tabs[0]:
     st.markdown(f"### 🗺️ Google Satellite & Hybrid Map with Concentric Buffers")
@@ -316,8 +334,8 @@ with view_tabs[0]:
     with map_c2:
         st.markdown("#### 🧭 Map Legend & Controls")
         st.markdown("""
-        - 🌟 **Dark Red Star:** Active Origin Reference Landmark (**Kacheri Varanasi**)
-        - 🟢 **20 km Ring:** Immediate Urban Fringe & Ring Road Phase 2
+        - 🌟 **Dark Red Star:** Active Origin (**Kacheri Varanasi near Varuna Pul**)
+        - 🟢 **20 km Ring:** Urban Fringe & Ring Road Phase 2
         - 🔵 **40 km Ring:** Chandauli / Mughalsarai / Mirzapur border
         - 🟡 **60 km Ring:** Ghazipur / Jaunpur Core
         - 🟣 **80 km Ring:** Azamgarh / Robertsganj approach
@@ -339,23 +357,71 @@ with view_tabs[0]:
                 show_concentric_rings=show_concentric,
                 zoom_start=9 if len(filtered_parcels) > 10 else 10
             )
-            st_folium(folium_map, width="100%", height=560)
+            st_folium(folium_map, width="100%", height=520)
         else:
             st.warning("No farmlands match the current filter criteria. Broaden your search filters.")
 
+    # -------------------------------------------------------------
+    # PROPERTY SUMMARY TABLE IN TAB 1 (EXPLICIT USER REQUEST)
+    # -------------------------------------------------------------
+    st.markdown("---")
+    st.markdown("### 📋 Complete Property Summary & Critique AI Ledger")
+    st.caption(f"Summary table of all **{len(filtered_parcels)}** properties matching filters, with actual driving road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha units, and Critique AI risk scores.")
+
+    if filtered_parcels:
+        tab1_rows = []
+        for idx, p in enumerate(filtered_parcels):
+            pid = str(p.get("id"))
+            r = routings.get(pid, {})
+            crit = critique_cache.get(pid, {})
+            is_f = is_favorite(pid, st.session_state["favorites"])
+            unit = p.get("unit_meta", {})
+
+            tab1_rows.append({
+                "S.No.": idx + 1,
+                "Fav": "⭐" if is_f else "—",
+                "Estate Name": p.get("name"),
+                "District": p.get("regional_district"),
+                "Road Dist (km)": r.get("road_km"),
+                "Drive Time": r.get("driving_time_display"),
+                "Radial Ring": r.get("distance_ring"),
+                "Acres": p.get("size_acres"),
+                "Pakka Bigha": unit.get("pakka_bigha"),
+                "Price/Acre (₹L)": p.get("price_per_acre_lakhs"),
+                "Total (₹Cr)": p.get("total_price_cr"),
+                "Elevation (m)": p.get("elevation_m"),
+                "Water TDS (ppm)": p.get("water_tds_ppm"),
+                "DD Score": p.get("due_diligence_score"),
+                "Legal Grade": p.get("due_diligence_grade"),
+                "Critique AI Score": crit.get("critique_risk_score", 90),
+                "Critique Risk Verdict": crit.get("critique_verdict_badge", "Pristine"),
+                "Top Negative Flag / Advisory": crit.get("negative_feedbacks_summary", "Clean Audit"),
+                "Govt Clearance": crit.get("primary_govt_clearance", "UP Bhulekh / IGRSUP Clear"),
+                "Published News Platform": p.get("published_news_source"),
+                "Notice Date": p.get("published_news_date"),
+                "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
+            })
+
+        df_tab1 = pd.DataFrame(tab1_rows)
+        st.dataframe(df_tab1, use_container_width=True, height=400)
+    else:
+        st.info("No records matching filter.")
+
 # -------------------------------------------------------------
-# TAB 2: DETAILED FARMLAND TELEMETRY & AUDIT CARDS
+# TAB 2: DETAILED FARMLAND TELEMETRY & LEGAL AUDIT
 # -------------------------------------------------------------
 with view_tabs[1]:
-    st.markdown("### 🔍 Detailed Farmland Telemetry & Legal Audit")
-    
+    st.markdown("### 🔍 Detailed Farmland Telemetry, Critique AI & Legal Audit")
+    st.caption("Inspect complete dossiers with soil parameters, groundwater TDS, independent critique risk findings, and UP Bhulekh verified records.")
+
     if filtered_parcels:
         # Selector for active farmland card
         farm_names = [f"{p['name']} ({routings[str(p['id'])]['road_km']} km | ₹{p['price_per_acre_lakhs']}L/Acre)" for p in filtered_parcels]
         selected_farm_idx = st.selectbox(
             "Select Farmland to Inspect Full Dossier:",
             options=range(len(filtered_parcels)),
-            format_func=lambda i: farm_names[i]
+            format_func=lambda i: farm_names[i],
+            key="tab2_farm_selector"
         )
         active_farm = filtered_parcels[selected_farm_idx]
         active_pid = str(active_farm["id"])
@@ -366,7 +432,7 @@ with view_tabs[1]:
         fav_col1, fav_col2 = st.columns([1, 4])
         with fav_col1:
             fav_btn_label = "★ Remove from Favorites" if is_fav else "☆ Add to Favorites"
-            if st.button(fav_btn_label, key=f"fav_btn_{active_pid}", use_container_width=True):
+            if st.button(fav_btn_label, key=f"fav_btn_tab2_{active_pid}", use_container_width=True):
                 new_state = toggle_favorite(active_pid)
                 st.session_state["favorites"] = load_favorites()
                 st.rerun()
@@ -375,19 +441,21 @@ with view_tabs[1]:
             if is_fav:
                 st.success("⭐ This farmland is in your Shortlisted Favorites!")
 
-        # 1. Top Summary Card
-        st.markdown(
-            render_farmland_summary_card_html(active_farm, active_routing, is_fav),
-            unsafe_allow_html=True
-        )
+        # 1. Top Summary Card (Clean HTML rendering)
+        render_html_block(render_farmland_summary_card_html(active_farm, active_routing, is_fav))
 
-        # 2. Split Columns: Agronomics & Legal/News
-        col_agri, col_legal = st.columns([1.6, 1.4])
+        # 2. Split Columns: Agronomics & Legal/News/Critique
+        col_agri, col_legal = st.columns([1.5, 1.5])
         with col_agri:
-            st.markdown(render_agronomic_telemetry_html(active_farm), unsafe_allow_html=True)
+            render_html_block(render_agronomic_telemetry_html(active_farm))
         with col_legal:
-            st.markdown(render_legal_and_news_card_html(active_farm), unsafe_allow_html=True)
-            st.markdown(render_seller_contact_card_html(active_farm), unsafe_allow_html=True)
+            render_html_block(render_legal_and_news_card_html(active_farm))
+
+        # 3. Independent Critique AI Risk Audit & Negative Feedbacks Dossier
+        render_html_block(render_critique_ai_card_html(active_farm))
+
+        # 4. Direct Seller Contact Card
+        render_html_block(render_seller_contact_card_html(active_farm))
 
     else:
         st.info("No farmlands to display with current filter criteria.")
@@ -397,13 +465,14 @@ with view_tabs[1]:
 # -------------------------------------------------------------
 with view_tabs[2]:
     st.markdown("### 📊 Master Farmland Comparison Ledger")
-    st.caption("Comprehensive data table with road distance, Purvanchal land units (Pakka Bigha), water TDS, due diligence scores, and published news.")
+    st.caption("Comprehensive data ledger with road distance, Purvanchal land units (Pakka Bigha), water TDS, due diligence scores, Critique AI audits, and published news.")
 
     if filtered_parcels:
         table_rows = []
         for idx, p in enumerate(filtered_parcels):
             pid = str(p.get("id"))
             r = routings[pid]
+            crit = critique_cache[pid]
             is_f = is_favorite(pid, st.session_state["favorites"])
             unit = p.get("unit_meta", {})
 
@@ -421,8 +490,12 @@ with view_tabs[2]:
                 "Total (₹Cr)": p.get("total_price_cr"),
                 "Elevation (m)": p.get("elevation_m"),
                 "Water TDS (ppm)": p.get("water_tds_ppm"),
-                "Score": p.get("due_diligence_score"),
-                "Grade": p.get("due_diligence_grade"),
+                "Due Diligence Score": p.get("due_diligence_score"),
+                "Legal Grade": p.get("due_diligence_grade"),
+                "Critique Risk Score": crit.get("critique_risk_score"),
+                "Critique Verdict": crit.get("critique_risk_verdict"),
+                "Negative Caveats & Grievances": crit.get("negative_feedbacks_summary"),
+                "Govt Clearance": crit.get("primary_govt_clearance"),
                 "News Platform": p.get("published_news_source"),
                 "Notice Type": p.get("notice_or_legal_type"),
                 "Khasra No": p.get("khasra_khatauni_number"),
@@ -430,7 +503,7 @@ with view_tabs[2]:
             })
 
         df_table = pd.DataFrame(table_rows)
-        st.dataframe(df_table, use_container_width=True, height=450)
+        st.dataframe(df_table, use_container_width=True, height=500)
     else:
         st.info("No records matching filter.")
 
@@ -451,26 +524,23 @@ with view_tabs[3]:
             news_url = p.get("published_news_url")
             notice_type = p.get("notice_or_legal_type")
 
-            st.markdown(f"""
-            <div style="background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="color: #FBBF24; font-weight: 700; font-size: 13px;">📰 {news_src}</span>
-                    <span style="background: #451A03; color: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 11px;">{notice_type}</span>
-                </div>
-                <div style="color: #F8FAFC; font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-                    {news_title}
-                </div>
-                <div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">
-                    <b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {active_lm['name'].split('(')[0].strip()}
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                    <span style="color: #64748B;">Published Date: {news_date}</span>
-                    <a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 600;">
-                        Verify Original Publication ↗
-                    </a>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            news_card_html = f"""
+<div style="background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+<span style="color: #FBBF24; font-weight: 700; font-size: 13px;">📰 {news_src}</span>
+<span style="background: #451A03; color: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 11px;">{notice_type}</span>
+</div>
+<div style="color: #F8FAFC; font-weight: 600; font-size: 14px; margin-bottom: 4px;">{news_title}</div>
+<div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">
+<b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {active_lm['name'].split('(')[0].strip()}
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+<span style="color: #64748B;">Published Date: {news_date}</span>
+<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 600;">Verify Original Publication ↗</a>
+</div>
+</div>
+"""
+            render_html_block(news_card_html)
     else:
         st.info("No published notices available.")
 
@@ -488,6 +558,7 @@ with view_tabs[4]:
         for idx, p in enumerate(fav_parcels):
             pid = str(p.get("id"))
             r = routings.get(pid, {})
+            crit = critique_cache.get(pid, {})
             unit = p.get("unit_meta", {})
             fav_matrix_rows.append({
                 "S.No.": idx + 1,
@@ -503,6 +574,8 @@ with view_tabs[4]:
                 "Water TDS (ppm)": p.get("water_tds_ppm"),
                 "Due Diligence Score": p.get("due_diligence_score"),
                 "Legal Grade": p.get("due_diligence_grade"),
+                "Critique Risk Score": crit.get("critique_risk_score"),
+                "Top Negative Flag": crit.get("negative_feedbacks_summary"),
                 "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
             })
         st.dataframe(pd.DataFrame(fav_matrix_rows), use_container_width=True)
@@ -520,17 +593,18 @@ with view_tabs[4]:
 # -------------------------------------------------------------
 with view_tabs[5]:
     st.markdown("### 📥 Farmland Portfolio Export Center")
-    st.caption("Generate institutional-grade multi-sheet Excel workbooks and CSV files containing all spatial, financial, agronomic, and legal provenance columns.")
+    st.caption("Generate institutional-grade multi-sheet Excel workbooks and CSV files containing all spatial, financial, agronomic, Critique AI, and legal provenance columns.")
 
     exp_c1, exp_c2 = st.columns(2)
     with exp_c1:
         st.markdown("#### 📗 Multi-Sheet Excel Workbook (.xlsx)")
         st.markdown("""
-        Includes 4 distinct worksheets:
-        - **Sheet 1:** All Verified Farmlands (UP East) with all 44 columns
+        Includes 5 distinct worksheets:
+        - **Sheet 1:** All Verified Farmlands (UP East) with all 48 columns
         - **Sheet 2:** ⭐ My Shortlisted Favorites
-        - **Sheet 3:** 📰 Published News & Legal Notices
-        - **Sheet 4:** 🛰️ Weekly AI-ML Spectral & Remote Sensing Telemetry
+        - **Sheet 3:** 🤖 Independent Critique AI & Risk Audit
+        - **Sheet 4:** 📰 Published News & Legal Notices
+        - **Sheet 5:** 🛰️ Weekly AI-ML Spectral & Remote Sensing Telemetry
         """)
 
         excel_bytes = generate_excel_workbook(filtered_parcels, routings, st.session_state["favorites"])
@@ -545,7 +619,7 @@ with view_tabs[5]:
     with exp_c2:
         st.markdown("#### 📄 Master CSV Export (.csv)")
         st.markdown("""
-        Standard comma-separated format compatible with Python Pandas, GIS software (QGIS, ArcGIS), and Google Sheets.
+        Standard comma-separated format compatible with Python Pandas, GIS software (QGIS, ArcGIS), and Google Sheets with Critique AI metrics.
         """)
 
         csv_file_path = export_master_csv(filtered_parcels, routings, st.session_state["favorites"])
@@ -562,9 +636,8 @@ with view_tabs[5]:
 
 # Footer
 st.markdown("---")
-st.markdown(
+render_html_block(
     "<div style='text-align: center; color: #64748B; font-size: 12px; padding: 10px;'>"
-    "UP East & Varanasi Farmlands Intelligence Platform • Sentinel-2 Multispectral Telemetry • UP Bhulekh RTC Verification • Google Maps Satellite Integration"
-    "</div>",
-    unsafe_allow_html=True
+    "UP East & Varanasi Farmlands Intelligence Platform • Sentinel-2 Multispectral Telemetry • UP Bhulekh RTC Verification • Independent Critique AI Engine • Google Maps Satellite Integration"
+    "</div>"
 )

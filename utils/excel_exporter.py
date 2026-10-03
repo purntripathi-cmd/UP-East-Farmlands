@@ -1,18 +1,19 @@
 """
 Comprehensive Multi-Sheet Excel & CSV Exporter Engine
-Generates styled Excel workbooks (.xlsx) with full metadata:
+Generates styled Excel workbooks (.xlsx) and master CSV with full metadata:
 - Sheet 1: All Verified Farmlands (UP East)
 - Sheet 2: ⭐ My Shortlisted Favorites
-- Sheet 3: 📰 Published News & Legal Caveats
-- Sheet 4: 🛰️ Weekly AI-ML Telemetry & Spectral Indices
+- Sheet 3: 🤖 Independent Critique AI Risk Audit & Negative Feedbacks
+- Sheet 4: 📰 Published News & Legal Caveats
+- Sheet 5: 🛰️ Weekly AI-ML Telemetry & Spectral Indices
 Exports data to memory buffer for direct Streamlit download and local CSV dump.
 """
 
 import os
 import io
-import datetime
 import pandas as pd
-from typing import List, Dict, Any, Set, Tuple
+from typing import List, Dict, Any, Set
+from utils.critic_ai import evaluate_property_critique
 
 
 def build_farmland_export_row(
@@ -21,7 +22,7 @@ def build_farmland_export_row(
     routing: Dict[str, Any],
     is_fav: bool
 ) -> Dict[str, Any]:
-    """Flattens a farmland record into comprehensive tabular export columns."""
+    """Flattens a farmland record into comprehensive tabular export columns including Critique AI."""
     supp = fm.get("supported_crops", {})
     if not isinstance(supp, dict):
         supp = {}
@@ -31,6 +32,9 @@ def build_farmland_export_row(
     spectral = fm.get("spectral", {})
     if not isinstance(spectral, dict):
         spectral = {}
+
+    critique = evaluate_property_critique(fm)
+    govt = critique.get("govt_site_details", {})
 
     return {
         "S.No.": sno,
@@ -66,6 +70,13 @@ def build_farmland_export_row(
         "Est Annual Agro Yield (₹ Lakhs)": fm.get("annual_agro_yield_estimate_lakhs"),
         "Due Diligence Score": fm.get("due_diligence_score"),
         "Legal Grade": fm.get("due_diligence_grade"),
+        "Critique AI Risk Score": critique.get("critique_risk_score"),
+        "Critique AI Risk Verdict": critique.get("critique_risk_verdict"),
+        "Negative Feedbacks & Red Flags": critique.get("negative_feedbacks_summary"),
+        "Govt Verification Records": critique.get("primary_govt_clearance"),
+        "UP Bhulekh Section 34 Mutation": govt.get("up_bhulekh_rtc"),
+        "IGRSUP 12-Year Encumbrance": govt.get("igrsup_barah_sala"),
+        "CGRMS Jansunwai Status": govt.get("jansunwai_status"),
         "Khasra / Khatauni Number": fm.get("khasra_khatauni_number"),
         "Title Status": fm.get("title_status"),
         "Revenue Record Type": fm.get("revenue_record_type"),
@@ -96,13 +107,13 @@ def generate_excel_workbook(
     routings: Dict[str, Dict[str, Any]],
     favorite_ids: Set[str] = None
 ) -> bytes:
-    """Generates a complete multi-sheet Excel workbook in memory."""
+    """Generates a complete multi-sheet Excel workbook in memory with Critique AI."""
     fav_set = favorite_ids or set()
     buffer = io.BytesIO()
 
-    # 1. Main Farmlands Sheet
     all_rows = []
     fav_rows = []
+    critique_rows = []
     news_rows = []
     ml_rows = []
 
@@ -115,6 +126,21 @@ def generate_excel_workbook(
 
         if is_fav:
             fav_rows.append(row)
+
+        crit = evaluate_property_critique(p)
+        critique_rows.append({
+            "S.No.": idx + 1,
+            "Estate Name": p.get("name"),
+            "District": p.get("regional_district"),
+            "Critique AI Risk Score": crit["critique_risk_score"],
+            "Risk Verdict": crit["critique_risk_verdict"],
+            "Negative Feedbacks & Village Grievances": crit["negative_feedbacks_summary"],
+            "Govt Portal Clearance": crit["primary_govt_clearance"],
+            "UP Bhulekh RTC Detail": crit["govt_site_details"]["up_bhulekh_rtc"],
+            "IGRSUP 12-Year Encumbrance": crit["govt_site_details"]["igrsup_barah_sala"],
+            "CGRMS Jansunwai Status": crit["govt_site_details"]["jansunwai_status"],
+            "Groundwater Depletion & TDS": f"{p.get('water_tds_ppm', 220)} ppm ({crit['govt_site_details']['groundwater_noc']})"
+        })
 
         news_rows.append({
             "S.No.": idx + 1,
@@ -145,12 +171,14 @@ def generate_excel_workbook(
 
     df_all = pd.DataFrame(all_rows)
     df_fav = pd.DataFrame(fav_rows) if fav_rows else pd.DataFrame([{"Message": "No farmlands shortlisted as favorite yet."}])
+    df_crit = pd.DataFrame(critique_rows)
     df_news = pd.DataFrame(news_rows)
     df_ml = pd.DataFrame(ml_rows)
 
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df_all.to_excel(writer, sheet_name="All Farmlands (UP East)", index=False)
         df_fav.to_excel(writer, sheet_name="⭐ Shortlisted Favorites", index=False)
+        df_crit.to_excel(writer, sheet_name="🤖 Critique AI & Risk Audit", index=False)
         df_news.to_excel(writer, sheet_name="📰 Published Media & Legal", index=False)
         df_ml.to_excel(writer, sheet_name="🛰️ Weekly AI-ML Spectral", index=False)
 
