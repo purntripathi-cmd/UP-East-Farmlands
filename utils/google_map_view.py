@@ -61,7 +61,8 @@ def create_google_farmland_map(
     center_lng: Optional[float] = None,
     zoom_start: int = 10,
     selected_pin: Optional[Dict[str, Any]] = None,
-    focused_sno: Optional[int] = None
+    focused_sno: Optional[int] = None,
+    favorites_by_parcel: Optional[Dict[str, List[str]]] = None
 ) -> folium.Map:
     """
     Constructs an interactive Folium Map using Google Maps satellite/hybrid tiles,
@@ -154,11 +155,13 @@ def create_google_farmland_map(
     # 3. Plot Farmland Parcels with Custom Numbered S.No. Badges & Popups
     marker_cluster = plugins.MarkerCluster(name="Farmland Parcels Cluster", disableClusteringAtZoom=12).add_to(m)
 
+    fav_parcel_map = favorites_by_parcel or {}
     for idx, p in enumerate(parcels):
         p_lat = float(p.get("lat", origin_lat))
         p_lng = float(p.get("lng", origin_lng))
         pid = str(p.get("id"))
-        is_fav = pid in fav_set
+        fav_users = fav_parcel_map.get(pid, [])
+        is_fav = (pid in fav_set) or bool(fav_users)
         sno = p.get("_serial_no", idx + 1)
         is_sc_st = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
         is_focused = (focused_sno is not None and sno == focused_sno)
@@ -249,13 +252,29 @@ def create_google_farmland_map(
         acres_val = float(p.get('size_acres', 0.0))
         bigha_val = round(acres_val * 1.60, 2)
 
+        fav_banner_html = ""
+        if fav_users:
+            badges_str = " ".join([f'<span style="background: #EDE9FE; color: #5B21B6; border: 1px solid #DDD6FE; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: bold;">👤 {u}</span>' for u in fav_users])
+            fav_banner_html = f"""
+            <div style="background: #FAF5FF; border: 1px solid #D8B4FE; padding: 4px 6px; border-radius: 4px; font-size: 10.5px; margin-bottom: 6px;">
+                <b style="color: #6D28D9;">⭐ Shortlisted by:</b> {badges_str}
+            </div>
+            """
+        elif is_fav:
+            fav_banner_html = """
+            <div style="background: #FAF5FF; border: 1px solid #D8B4FE; padding: 4px 6px; border-radius: 4px; font-size: 10.5px; margin-bottom: 6px;">
+                <b style="color: #6D28D9;">⭐ Shortlisted Favorite</b>
+            </div>
+            """
+
         popup_html = f"""
         <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 250px; line-height: 1.4;">
-            <div style="background: {'#991B1B' if is_sc_st else '#1E293B'}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
-                🌾 #{sno}. {p.get('name', 'Farmland Estate')}
+            <div style="background: {'#991B1B' if is_sc_st else ('#6D28D9' if is_fav else '#1E293B')}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
+                🌾 #{sno}. {p.get('name', 'Farmland Estate')} {'★' if is_fav else ''}
             </div>
             <div style="padding: 8px 10px; border: 1px solid #CBD5E1; border-top: none; border-radius: 0 0 6px 6px;">
                 {sc_alert_html}
+                {fav_banner_html}
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{p.get('regional_district', 'Varanasi')}</span>
                     <span style="font-weight: bold; color: #10B981; font-size: 12px;">₹{p.get('price_per_acre_lakhs')} L/Acre</span>
@@ -289,10 +308,11 @@ def create_google_farmland_map(
         </div>
         """
 
+        fav_tag_tip = f" [⭐ Saved by {', '.join(fav_users)}]" if fav_users else (" [⭐ Favorite]" if is_fav else "")
         folium.Marker(
             location=[p_lat, p_lng],
             popup=folium.Popup(popup_html, max_width=320),
-            tooltip=f"#{sno}. {p.get('name')} | {road_km} km ({drive_time}) | ₹{p.get('price_per_acre_lakhs')} L/Ac {'[🚨 SC/ST RESTRICTED]' if is_sc_st else ''}",
+            tooltip=f"#{sno}. {p.get('name')}{fav_tag_tip} | {road_km} km ({drive_time}) | ₹{p.get('price_per_acre_lakhs')} L/Ac {'[🚨 SC/ST RESTRICTED]' if is_sc_st else ''}",
             icon=folium.DivIcon(
                 html=icon_html,
                 icon_size=(44, 24),

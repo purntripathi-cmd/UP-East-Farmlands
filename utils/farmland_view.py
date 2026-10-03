@@ -65,7 +65,8 @@ def render_farmland_summary_card_html(
     routing: Dict[str, Any],
     is_fav: bool = False,
     serial_no: Any = None,
-    flag_info: Optional[Dict[str, Any]] = None
+    flag_info: Optional[Dict[str, Any]] = None,
+    fav_users: Optional[List[str]] = None
 ) -> str:
     """Renders top summary card with road distance from active landmark, pricing, size, serial number, and moderation flags."""
     acres = item.get("size_acres", 0.0)
@@ -85,7 +86,14 @@ def render_farmland_summary_card_html(
     sat_url = routing.get("google_satellite_url", item.get("google_maps_satellite_url", "#"))
     
     s_no_badge = f'<span style="background: #E0E7FF; color: #3730A3; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid #C7D2FE;">🏷️ S.No. #{serial_no}</span>' if serial_no is not None else ''
-    fav_badge = '<span style="background: #F3E8FF; color: #6B21A8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #DDD6FE;">⭐ Shortlisted Favorite</span>' if is_fav else ''
+    
+    if fav_users:
+        users_str = ", ".join(fav_users)
+        fav_badge = f'<span style="background: #F3E8FF; color: #6B21A8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #DDD6FE;">⭐ Shortlisted Favorite (👤 {users_str})</span>'
+    elif is_fav:
+        fav_badge = '<span style="background: #F3E8FF; color: #6B21A8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #DDD6FE;">⭐ Shortlisted Favorite</span>'
+    else:
+        fav_badge = ''
     
     # Moderation flag alerts & badges
     flag_type = flag_info.get("flag") if flag_info else None

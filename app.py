@@ -38,10 +38,19 @@ from utils.geo_routing import (
 )
 from utils.land_units import LandUnitConverter
 from utils.favorites_manager import (
+    DEFAULT_USERNAMES,
     load_favorites,
+    load_raw_favorites,
+    save_favorites,
+    save_raw_favorites,
+    add_favorite,
+    remove_favorite,
     toggle_favorite,
     is_favorite,
-    filter_favorite_parcels
+    get_users_for_parcel,
+    get_all_active_usernames,
+    filter_favorite_parcels,
+    clear_all_favorites
 )
 from utils.property_flags_manager import (
     load_property_flags,
@@ -338,6 +347,89 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;
     }
 
+    /* ============================================================
+       WHITE & LIGHT BUTTON STYLING — STRICT ZERO BLACK BUTTONS
+       ============================================================ */
+    .stButton > button,
+    button[kind="secondary"],
+    button[data-testid="baseButton-secondary"],
+    div[data-testid="stFormSubmitButton"] > button {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1.5px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 13.5px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    .stButton > button:hover,
+    button[kind="secondary"]:hover,
+    button[data-testid="baseButton-secondary"]:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #F8FAFC !important;
+        background: #F8FAFC !important;
+        color: #0F172A !important;
+        border-color: #94A3B8 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    }
+    .stButton > button:active,
+    button[kind="secondary"]:active {
+        background-color: #F1F5F9 !important;
+        background: #F1F5F9 !important;
+        color: #0F172A !important;
+        border-color: #64748B !important;
+    }
+
+    /* Primary Buttons: Light Ice Blue / Emerald Tints (Never Black) */
+    button[kind="primary"],
+    .stButton > button[kind="primary"],
+    button[data-testid="baseButton-primary"] {
+        background-color: #EFF6FF !important;
+        background: #EFF6FF !important;
+        color: #1D4ED8 !important;
+        border: 1.5px solid #60A5FA !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12) !important;
+    }
+    button[kind="primary"]:hover,
+    .stButton > button[kind="primary"]:hover,
+    button[data-testid="baseButton-primary"]:hover {
+        background-color: #DBEAFE !important;
+        background: #DBEAFE !important;
+        color: #1E40AF !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* Download Buttons: Crisp Light Emerald (Never Black) */
+    .stDownloadButton > button {
+        background-color: #ECFDF5 !important;
+        background: #ECFDF5 !important;
+        color: #047857 !important;
+        border: 1.5px solid #6EE7B7 !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(4, 120, 87, 0.12) !important;
+    }
+    .stDownloadButton > button:hover {
+        background-color: #D1FAE5 !important;
+        background: #D1FAE5 !important;
+        color: #065F46 !important;
+        border-color: #059669 !important;
+    }
+
+    /* Inputs, Selectboxes, Multiselects: Clean White Fields */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div,
+    input {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border-color: #CBD5E1 !important;
+    }
+
     /* Modern Mobile Responsive Layout */
     @media (max-width: 768px) {
         .block-container {
@@ -407,8 +499,18 @@ district_choices = ["All Districts (UP East)"] + all_districts
 # -------------------------------------------------------------
 # SESSION STATE INITIALIZATION
 # -------------------------------------------------------------
+if "active_user_name" not in st.session_state:
+    st.session_state["active_user_name"] = "VPT"
+
+if "fav_user_filter" not in st.session_state:
+    st.session_state["fav_user_filter"] = "All Properties (Inventory & Favorites)"
+
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = load_favorites()
+
+raw_fav_records = load_raw_favorites()
+all_active_usernames = get_all_active_usernames(raw_fav_records)
+fav_users_by_parcel = {str(p["id"]): get_users_for_parcel(str(p["id"]), raw_fav_records) for p in all_parcels}
 
 if "property_flags" not in st.session_state:
     st.session_state["property_flags"] = load_property_flags()
@@ -550,11 +652,44 @@ max_road_km = st.sidebar.slider(
     help="Filter by estimated actual road driving distance from active origin."
 )
 
-# 5. Shortlisted Favorites Quick-Toggle
-show_fav_only = st.sidebar.checkbox(
-    f"⭐ Show Only My Favorites ({len(st.session_state['favorites'])})",
-    value=False,
-    help="Display only the parcels you have marked as favorite."
+# 5. User Profiles & Multi-User Favorites Filters (Visible to All)
+st.sidebar.markdown("### ⭐ Investor Profiles & Favorites")
+
+sidebar_user_list = list(DEFAULT_USERNAMES)
+for u in all_active_usernames:
+    if u not in sidebar_user_list:
+        sidebar_user_list.append(u)
+sidebar_user_list.append("➕ Custom First Name...")
+
+current_user_idx = sidebar_user_list.index(st.session_state["active_user_name"]) if st.session_state["active_user_name"] in sidebar_user_list else 0
+chosen_sidebar_user = st.sidebar.selectbox(
+    "👤 Active User Profile / First Name:",
+    options=sidebar_user_list,
+    index=current_user_idx,
+    key="sb_active_user_select",
+    help="Defaults: VPT, PPT, Guest-1, guest-2. Any property you star will be saved under this name and visible to everyone."
+)
+if chosen_sidebar_user == "➕ Custom First Name...":
+    custom_u = st.sidebar.text_input("Enter First Name:", value="", placeholder="e.g. Ramesh", key="sb_custom_user_input")
+    if custom_u.strip():
+        st.session_state["active_user_name"] = custom_u.strip()
+else:
+    st.session_state["active_user_name"] = chosen_sidebar_user
+
+fav_filter_choices = [
+    "All Properties (Inventory & Favorites)",
+    f"⭐ All Favorites (Combined — {len(st.session_state['favorites'])})"
+] + [
+    f"👤 {u}'s Favorites ({len(load_favorites(username=u))})"
+    for u in (all_active_usernames or DEFAULT_USERNAMES)
+]
+
+sel_fav_filter = st.sidebar.selectbox(
+    "⭐ Filter by Favorites:",
+    options=fav_filter_choices,
+    index=0,
+    key="sb_fav_filter_select",
+    help="Filter by all favorites (visible to all) or by specific investor."
 )
 
 # 6. Listing Moderation & Ignore/Fake Filters
@@ -650,9 +785,14 @@ for p in all_parcels:
         if flag_type == "fake" and not st.session_state["show_fake"]:
             continue
 
-    # Check Favorite Filter
-    if show_fav_only and not is_favorite(pid, st.session_state["favorites"]):
-        continue
+    # Check Multi-User Favorite Filter
+    if "⭐ All Favorites" in sel_fav_filter:
+        if not is_favorite(pid):
+            continue
+    elif sel_fav_filter.startswith("👤 ") and "'s Favorites" in sel_fav_filter:
+        target_uname = sel_fav_filter.split("👤 ")[1].split("'s Favorites")[0].strip()
+        if not is_favorite(pid, username=target_uname):
+            continue
 
     # Check Caste Category & Section 98 UP Revenue Code Filter
     is_sc_st_parcel = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
@@ -852,26 +992,59 @@ with view_tabs[0]:
     for idx, p in enumerate(display_parcels):
         p["_serial_no"] = idx + 1
 
-    # S.No. Map Locator Bar: Locate any specific property on Google Map
-    loc_c1, loc_c2 = st.columns([3.2, 1.2])
+    # S.No. & Multi-User Favorites Google Map Locator Bar
+    loc_c1, loc_c2, loc_c3 = st.columns([2.5, 1.3, 1.0])
     with loc_c1:
-        sno_options = ["🗺️ Overview (All Farmland Parcels)"] + [
-            f"#{idx + 1}. {p.get('name')} ({p.get('regional_district', '')} • {p.get('size_acres')} Ac / {round(float(p.get('size_acres', 0))*1.6, 2)} Bigha{' • 🚨 SC/ST' if (p.get('is_sc_st_land') or 'SC' in p.get('caste_category', '') or 'ST' in p.get('caste_category', '')) else ''})"
-            for idx, p in enumerate(display_parcels)
-        ]
+        sno_options = ["🗺️ Overview (All Farmland Parcels)"]
+        for idx, p in enumerate(display_parcels):
+            pid = str(p.get("id"))
+            fav_u = fav_users_by_parcel.get(pid, [])
+            fav_tag = f" • ⭐ {', '.join(fav_u)}" if fav_u else ""
+            sc_tag = " • 🚨 SC/ST" if (p.get("is_sc_st_land") or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")) else ""
+            bigha_txt = f"{round(float(p.get('size_acres', 0))*1.6, 2)} Bigha"
+            sno_options.append(f"#{idx + 1}. {p.get('name')} ({p.get('regional_district', '')} • {bigha_txt}{fav_tag}{sc_tag})")
+
         selected_sno_label = st.selectbox(
-            "🎯 Locate Farmland by S.No. on Google Map:",
+            "🎯 Locate Farmland / Favorite by S.No. on Google Map:",
             options=sno_options,
             index=0,
             key="sb_map_sno_locator",
-            help="Select any property by its exact Serial Number (#S.No.) to zoom directly into its parcel pin with high-precision Google satellite focus."
+            help="Select any property or favorite by its exact Serial Number (#S.No.) to zoom directly into its parcel pin."
         )
+
     with loc_c2:
+        map_fav_quick_choices = ["🌐 Show All on Map", "⭐ Show All Favorites on Map"] + [f"👤 {u}'s Favs on Map" for u in all_active_usernames]
+        sel_map_fav_quick = st.selectbox(
+            "⭐ Filter Map Pins:",
+            options=map_fav_quick_choices,
+            index=0,
+            key="sb_map_fav_quick_select",
+            help="Focus the Google Map pins on only shortlisted favorites (visible to all or by specific investor)."
+        )
+
+    with loc_c3:
         st.write("")
-        if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
-            if st.button("❌ Reset Map Focus", key="btn_reset_map_sno", use_container_width=True):
+        if selected_sno_label != "🗺️ Overview (All Farmland Parcels)" or sel_map_fav_quick != "🌐 Show All on Map":
+            if st.button("❌ Reset Map", key="btn_reset_map_sno", use_container_width=True):
                 st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+                st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
                 st.rerun()
+
+    # Filter display parcels for map if map fav quick filter is active
+    map_parcels = list(display_parcels)
+    if sel_map_fav_quick == "⭐ Show All Favorites on Map":
+        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")))]
+        if map_parcels:
+            center_lat = float(map_parcels[0]["lat"])
+            center_lng = float(map_parcels[0]["lng"])
+            map_zoom = 11
+    elif sel_map_fav_quick.startswith("👤 ") and "'s Favs on Map" in sel_map_fav_quick:
+        u_target = sel_map_fav_quick.split("👤 ")[1].split("'s Favs on Map")[0].strip()
+        map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")), username=u_target)]
+        if map_parcels:
+            center_lat = float(map_parcels[0]["lat"])
+            center_lng = float(map_parcels[0]["lng"])
+            map_zoom = 11
 
     focused_sno = None
     if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
@@ -892,7 +1065,7 @@ with view_tabs[0]:
         - 🌟 **Dark Red Star:** Active Origin (**{center_short}**)
         - 🏷️ **Numbered Badges (#1, #2...):** Exact S.No. from Table Below
         - 🚨 **Red Badge (#S.No. 🚨):** SC/ST Owned (Section 98 Barred for General)
-        - 💜 **Purple Badge (#S.No. ★):** Starred Favorite
+        - 💜 **Purple Badge (#S.No. ★):** Starred Favorite (Saved by Investor)
         - 🌿 **Green Badge (#S.No.):** Sovereign Grade A+ (Score ≥ 90)
         - 🔷 **Blue Badge (#S.No.):** Institutional Grade A (Score 75-89)
         - 🟡 **Amber Badge (#S.No.):** Operational Advisory (Score 60-74)
@@ -917,7 +1090,7 @@ with view_tabs[0]:
             }
 
         folium_map = create_google_farmland_map(
-            parcels=display_parcels,
+            parcels=map_parcels,
             origin_lat=origin_lat,
             origin_lng=origin_lng,
             origin_name=active_lm["name"],
@@ -927,7 +1100,8 @@ with view_tabs[0]:
             center_lng=center_lng,
             zoom_start=map_zoom,
             selected_pin=selected_pin_obj,
-            focused_sno=focused_sno
+            focused_sno=focused_sno,
+            favorites_by_parcel=fav_users_by_parcel
         )
 
         st.caption("💡 **Tip:** Tap or click anywhere on the Google Map to pin coordinates and instantly add a new property!")
@@ -1115,9 +1289,12 @@ with view_tabs[0]:
             else:
                 caste_badge = "✅ General / OBC"
 
+            fav_u = fav_users_by_parcel.get(pid, [])
+            fav_cell = f"⭐ {', '.join(fav_u)}" if fav_u else "—"
+
             tab1_rows.append({
                 "S.No.": idx + 1,
-                "Fav": "⭐" if is_f else "—",
+                "Fav / Shortlisted By": fav_cell,
                 "Estate Name": p.get("name"),
                 "Status": status_text,
                 "District": p.get("regional_district"),
@@ -1144,15 +1321,60 @@ with view_tabs[0]:
             })
 
         df_tab1 = pd.DataFrame(tab1_rows)
-        # Freeze first 3 columns (S.No., Fav, Estate Name)
+        # Freeze first 3 columns (S.No., Fav / Shortlisted By, Estate Name)
         tab1_col_config = {
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
-            "Fav": st.column_config.TextColumn("Fav", pinned=True, width="small"),
+            "Fav / Shortlisted By": st.column_config.TextColumn("Fav / Shortlisted By", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha = 32 Biswa)", format="%.2f"),
             "Caste / Sec 98 Flag": st.column_config.TextColumn("Caste / Sec 98 Flag", help="Section 98 UP Revenue Code 2006 compliance flag. SC/ST land cannot be purchased by General caste buyers without prior DM permission."),
         }
         st.dataframe(df_tab1, use_container_width=True, height=450, column_config=tab1_col_config, hide_index=True)
+
+        # Quick Star / Shortlist by User Expander
+        with st.expander("⭐ 👤 Quick Star / Shortlist Farmland by User Profile", expanded=False):
+            st.markdown("#### Save Farmland as Favorite by First Name")
+            st.caption("Favorites saved under your first name are visible to all users. Each user can save multiple favorites, or remove and re-add them anytime.")
+            qs_c1, qs_c2, qs_c3, qs_c4 = st.columns([2.2, 1.4, 1.2, 1.2])
+            with qs_c1:
+                qs_parcels_map = {f"#{idx+1}. {p['name']} ({p.get('regional_district')})": str(p['id']) for idx, p in enumerate(display_parcels)}
+                sel_qs_label = st.selectbox("Select Farmland Property:", options=list(qs_parcels_map.keys()), key="sel_qs_prop")
+                sel_qs_pid = qs_parcels_map[sel_qs_label]
+            with qs_c2:
+                qs_users = list(DEFAULT_USERNAMES)
+                for u in all_active_usernames:
+                    if u not in qs_users:
+                        qs_users.append(u)
+                qs_users.append("➕ Custom Name...")
+                user_def_idx = qs_users.index(st.session_state["active_user_name"]) if st.session_state["active_user_name"] in qs_users else 0
+                sel_qs_user = st.selectbox("Shortlist as User:", options=qs_users, index=user_def_idx, key="sel_qs_user")
+                if sel_qs_user == "➕ Custom Name...":
+                    qs_custom_name = st.text_input("Enter First Name:", value="", placeholder="e.g. Ramesh", key="qs_custom_input")
+                    target_user = qs_custom_name.strip() if qs_custom_name.strip() else "Guest-1"
+                else:
+                    target_user = sel_qs_user
+                st.session_state["active_user_name"] = target_user
+            with qs_c3:
+                st.write("")
+                if is_favorite(sel_qs_pid, username=target_user):
+                    if st.button(f"★ Remove ({target_user})", key="btn_qs_rem", use_container_width=True):
+                        remove_favorite(sel_qs_pid, username=target_user)
+                        st.session_state["favorites"] = load_favorites()
+                        st.success(f"Removed from {target_user}'s favorites.")
+                        st.rerun()
+                else:
+                    if st.button(f"☆ Add ({target_user})", key="btn_qs_add", use_container_width=True):
+                        add_favorite(sel_qs_pid, username=target_user)
+                        st.session_state["favorites"] = load_favorites()
+                        st.success(f"Saved to {target_user}'s favorites!")
+                        st.rerun()
+            with qs_c4:
+                st.write("")
+                already_favs = get_users_for_parcel(sel_qs_pid, raw_fav_records)
+                if already_favs:
+                    st.caption(f"**Favorited by:** {', '.join(already_favs)}")
+                else:
+                    st.caption("No favorites yet.")
 
         # Quick Flag & Ignore Moderation Center Expander
         with st.expander(f"🛡️ 🚫 Flagged & Ignored Listings Center ({len(get_ignored_ids(st.session_state['property_flags']))} Ignored, {len(get_fake_ids(st.session_state['property_flags']))} Fake)", expanded=False):
@@ -1234,45 +1456,85 @@ with view_tabs[1]:
         active_farm = target_parcels[selected_farm_idx]
         active_pid = str(active_farm["id"])
         active_routing = routings[active_pid]
-        is_fav = is_favorite(active_pid, st.session_state["favorites"])
+        cur_fav_users = get_users_for_parcel(active_pid, raw_fav_records)
+        is_fav = bool(cur_fav_users)
 
         st.markdown(f"#### 🏷️ Property Dossier: #{selected_farm_idx + 1}. {active_farm.get('name')} ({active_farm.get('regional_district')})")
 
-        # Action Controls: Favorites, Ignore List, Fake Listing Flag
+        # Action Controls: Multi-User Favorites, Ignore List, Fake Listing Flag
         active_flag_info = get_property_flag(active_pid, st.session_state["property_flags"])
         active_flag_type = active_flag_info.get("flag") if active_flag_info else None
 
-        fav_col1, fav_col2, fav_col3 = st.columns([1.2, 1.2, 1.2])
-        with fav_col1:
-            fav_btn_label = "★ Remove Favorite" if is_fav else "☆ Add to Favorites"
-            if st.button(fav_btn_label, key=f"fav_btn_tab2_{active_pid}", use_container_width=True):
-                new_state = toggle_favorite(active_pid)
-                st.session_state["favorites"] = load_favorites()
-                st.rerun()
+        if cur_fav_users:
+            badges_html = " ".join([f'<span style="background: #F3E8FF; color: #6B21A8; border: 1.5px solid #DDD6FE; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 700; display: inline-block; margin-right: 4px;">👤 {u}</span>' for u in cur_fav_users])
+            st.markdown(f"**⭐ Shortlisted by ({len(cur_fav_users)} Investors — Visible to All):** {badges_html}", unsafe_allow_html=True)
+        else:
+            st.caption("⭐ Not yet shortlisted by any investor. Use the controls below to save under your first name.")
 
-        with fav_col2:
+        fav_ctl_col1, fav_ctl_col2, fav_ctl_col3, fav_ctl_col4 = st.columns([1.5, 1.3, 1.1, 1.1])
+        with fav_ctl_col1:
+            t2_user_list = list(DEFAULT_USERNAMES)
+            for u in all_active_usernames:
+                if u not in t2_user_list:
+                    t2_user_list.append(u)
+            t2_user_list.append("➕ Custom First Name...")
+
+            t2_user_def_idx = t2_user_list.index(st.session_state["active_user_name"]) if st.session_state["active_user_name"] in t2_user_list else 0
+            sel_t2_user = st.selectbox(
+                "👤 Star / Unstar as User:",
+                options=t2_user_list,
+                index=t2_user_def_idx,
+                key=f"tab2_fav_user_sel_{active_pid}",
+                help="Select or enter your name. Defaults: VPT, PPT, Guest-1, guest-2."
+            )
+            if sel_t2_user == "➕ Custom First Name...":
+                custom_t2_name = st.text_input("Enter First Name:", value="", placeholder="e.g. Ramesh", key=f"t2_custom_name_{active_pid}")
+                effective_t2_user = custom_t2_name.strip() if custom_t2_name.strip() else "Guest-1"
+            else:
+                effective_t2_user = sel_t2_user
+            st.session_state["active_user_name"] = effective_t2_user
+
+        with fav_ctl_col2:
+            st.write("")
+            user_already_fav = is_favorite(active_pid, username=effective_t2_user)
+            if user_already_fav:
+                if st.button(f"★ Remove Favorite ({effective_t2_user})", key=f"fav_btn_rem_{active_pid}", use_container_width=True):
+                    remove_favorite(active_pid, username=effective_t2_user)
+                    st.session_state["favorites"] = load_favorites()
+                    st.success(f"Removed from {effective_t2_user}'s favorites.")
+                    st.rerun()
+            else:
+                if st.button(f"☆ Add to Favorites ({effective_t2_user})", key=f"fav_btn_add_{active_pid}", use_container_width=True):
+                    add_favorite(active_pid, username=effective_t2_user)
+                    st.session_state["favorites"] = load_favorites()
+                    st.success(f"Saved to {effective_t2_user}'s favorites!")
+                    st.rerun()
+
+        with fav_ctl_col3:
+            st.write("")
             if active_flag_type == "ignored":
-                if st.button("↩️ Un-ignore Property", key=f"unignore_btn_{active_pid}", use_container_width=True):
+                if st.button("↩️ Un-ignore", key=f"unignore_btn_{active_pid}", use_container_width=True):
                     remove_property_flag(active_pid)
                     st.session_state["property_flags"] = load_property_flags()
                     st.success("✅ Property restored to active inventory!")
                     st.rerun()
             else:
-                if st.button("🚫 Add to Ignore List", key=f"ignore_btn_{active_pid}", use_container_width=True):
+                if st.button("🚫 Add Ignore", key=f"ignore_btn_{active_pid}", use_container_width=True):
                     set_property_flag(active_pid, "ignored", "Dismissed from active discovery by user")
                     st.session_state["property_flags"] = load_property_flags()
                     st.warning("🚫 Property added to Ignore List!")
                     st.rerun()
 
-        with fav_col3:
+        with fav_ctl_col4:
+            st.write("")
             if active_flag_type == "fake":
-                if st.button("✅ Remove Fake Flag", key=f"unfake_btn_{active_pid}", use_container_width=True):
+                if st.button("✅ Clear Fake", key=f"unfake_btn_{active_pid}", use_container_width=True):
                     remove_property_flag(active_pid)
                     st.session_state["property_flags"] = load_property_flags()
                     st.success("✅ Fake listing flag removed!")
                     st.rerun()
             else:
-                if st.button("🚩 Mark as Fake Listing", key=f"fake_btn_{active_pid}", use_container_width=True):
+                if st.button("🚩 Mark Fake", key=f"fake_btn_{active_pid}", use_container_width=True):
                     set_property_flag(active_pid, "fake", "Reported by user as fraudulent or deceptive listing")
                     st.session_state["property_flags"] = load_property_flags()
                     st.error("🚩 Marked as Fake Listing! Risk score downgraded to 0.")
@@ -1284,7 +1546,8 @@ with view_tabs[1]:
             active_routing,
             is_fav,
             serial_no=selected_farm_idx + 1,
-            flag_info=active_flag_info
+            flag_info=active_flag_info,
+            fav_users=cur_fav_users
         ))
 
         # 2. Split Columns: Agronomics & Legal/News
@@ -1430,11 +1693,32 @@ with view_tabs[3]:
 # TAB 5: SHORTLISTED FAVORITES MATRIX
 # -------------------------------------------------------------
 with view_tabs[4]:
-    st.markdown("### ⭐ My Shortlisted Favorites Matrix")
-    fav_parcels = filter_favorite_parcels(all_parcels, st.session_state["favorites"])
+    st.markdown("### ⭐ Multi-User Shortlisted Favorites Matrix")
+    st.caption("All favorites shortlisted by any investor are visible to everyone. Filter by investor profile or manage selections below.")
+
+    t5_c1, t5_c2 = st.columns([2.5, 1.5])
+    with t5_c1:
+        t5_user_filter_opts = ["🌐 All Users (Combined Favorites)"] + [f"👤 {u}'s Favorites" for u in (all_active_usernames or DEFAULT_USERNAMES)]
+        sel_t5_user_filter = st.selectbox(
+            "👤 Filter Matrix by Investor / Username (Visible to All):",
+            options=t5_user_filter_opts,
+            index=0,
+            key="tab5_user_filter_select",
+            help="View all favorites across the team or filter by specific username."
+        )
+
+    # Determine filtered favorites for Tab 5
+    if sel_t5_user_filter == "🌐 All Users (Combined Favorites)":
+        fav_ids_t5 = load_favorites()
+        target_u_name = None
+    else:
+        target_u_name = sel_t5_user_filter.split("👤 ")[1].split("'s Favorites")[0].strip()
+        fav_ids_t5 = load_favorites(username=target_u_name)
+
+    fav_parcels = [p for p in all_parcels if str(p.get("id")) in fav_ids_t5]
 
     if fav_parcels:
-        st.success(f"You have shortlisted **{len(fav_parcels)}** preferred agricultural holdings.")
+        st.success(f"Displaying **{len(fav_parcels)}** shortlisted agricultural holdings ({sel_t5_user_filter}).")
         
         fav_matrix_rows = []
         for idx, p in enumerate(fav_parcels):
@@ -1443,6 +1727,7 @@ with view_tabs[4]:
             crit = critique_cache.get(pid, {})
             acres_val = float(p.get("size_acres", 0.0))
             total_bigha_val = round(acres_val * 1.60, 2)
+            cur_u_list = get_users_for_parcel(pid, raw_fav_records)
 
             is_sc = p.get("is_sc_st_land", False) or "SC" in p.get("caste_category", "") or "ST" in p.get("caste_category", "")
             sec_stat = p.get("section_98_status", "")
@@ -1455,6 +1740,7 @@ with view_tabs[4]:
 
             fav_matrix_rows.append({
                 "S.No.": idx + 1,
+                "Favorited By": ", ".join(cur_u_list) if cur_u_list else "—",
                 "Estate Name": p.get("name"),
                 "District": p.get("regional_district"),
                 f"Road Distance from {center_short[:20]} (km)": r.get("road_km"),
@@ -1473,9 +1759,10 @@ with view_tabs[4]:
                 "Contact": f"{p.get('contact_person')} ({p.get('contact_phone')})"
             })
         df_fav = pd.DataFrame(fav_matrix_rows)
-        # Freeze first 3 columns (S.No., Estate Name, District)
+        # Freeze first 3 columns (S.No., Favorited By, Estate Name)
         fav_col_config = {
             "S.No.": st.column_config.NumberColumn("S.No.", pinned=True, width="small"),
+            "Favorited By": st.column_config.TextColumn("Favorited By", pinned=True, width="medium"),
             "Estate Name": st.column_config.TextColumn("Estate Name", pinned=True, width="medium"),
             "District": st.column_config.TextColumn("District", pinned=True, width="medium"),
             "Total Bigha": st.column_config.NumberColumn("Total Bigha", help="Purvanchal Pakka Bigha (1 Acre = 1.60 Pakka Bigha)", format="%.2f"),
@@ -1483,13 +1770,24 @@ with view_tabs[4]:
         }
         st.dataframe(df_fav, use_container_width=True, column_config=fav_col_config, hide_index=True)
 
-        if st.button("🗑️ Clear All Favorites", type="secondary"):
-            st.session_state["favorites"] = set()
-            from utils.favorites_manager import save_favorites
-            save_favorites(set())
-            st.rerun()
+        clr_c1, clr_c2 = st.columns(2)
+        with clr_c1:
+            if target_u_name:
+                if st.button(f"🗑️ Clear {target_u_name}'s Favorites", use_container_width=True):
+                    clear_all_favorites(username=target_u_name)
+                    st.session_state["favorites"] = load_favorites()
+                    st.success(f"Cleared all favorites for {target_u_name}.")
+                    st.rerun()
+            else:
+                st.caption("Select an investor above to clear only their favorites.")
+        with clr_c2:
+            if st.button("🗑️ Clear All Favorites (Across All Users)", use_container_width=True):
+                clear_all_favorites()
+                st.session_state["favorites"] = load_favorites()
+                st.success("All favorites across all users cleared.")
+                st.rerun()
     else:
-        st.info("You haven't shortlisted any farmlands as favorites yet. Click the ⭐ button on any farmland card to add it here.")
+        st.info(f"No shortlisted farmlands found for {sel_t5_user_filter}. You can add favorites in Tab 1 or Tab 2 under any username!")
 
 # -------------------------------------------------------------
 # TAB 6: EXPORT CENTER (EXCEL & CSV)

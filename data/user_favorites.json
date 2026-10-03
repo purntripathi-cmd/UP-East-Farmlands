@@ -1,5 +1,17 @@
 [
-  "farm_a",
-  "farm_b",
-  "farm_c"
+  {
+    "parcel_id": "farm_a",
+    "username": "VPT",
+    "timestamp": "03 Oct 2026, 21:49 IST"
+  },
+  {
+    "parcel_id": "farm_b",
+    "username": "VPT",
+    "timestamp": "03 Oct 2026, 21:49 IST"
+  },
+  {
+    "parcel_id": "farm_c",
+    "username": "VPT",
+    "timestamp": "03 Oct 2026, 21:49 IST"
+  }
 ]

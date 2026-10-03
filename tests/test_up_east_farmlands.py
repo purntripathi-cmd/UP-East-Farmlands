@@ -42,11 +42,19 @@ from utils.geo_routing import (
     get_city_center_for_district
 )
 from utils.favorites_manager import (
+    DEFAULT_USERNAMES,
     load_favorites,
+    load_raw_favorites,
     save_favorites,
+    save_raw_favorites,
+    add_favorite,
+    remove_favorite,
     toggle_favorite,
     is_favorite,
-    filter_favorite_parcels
+    get_users_for_parcel,
+    get_all_active_usernames,
+    filter_favorite_parcels,
+    clear_all_favorites
 )
 from utils.property_flags_manager import (
     load_property_flags,
@@ -575,5 +583,101 @@ def test_all_dataset_parcels_have_sc_st_metadata():
     assert sc_st_count >= 10, f"Expected realistic SC/ST test parcels, found {sc_st_count}"
 
 
+# ============================================================
+# 16. MULTI-USER FAVORITES, LIGHT BUTTONS & MAP INTEGRATION TESTS
+# ============================================================
+def test_multi_user_favorites_default_usernames():
+    """Verifies that DEFAULT_USERNAMES contains VPT, PPT, Guest-1, guest-2."""
+    assert "VPT" in DEFAULT_USERNAMES
+    assert "PPT" in DEFAULT_USERNAMES
+    assert "Guest-1" in DEFAULT_USERNAMES
+    assert "guest-2" in DEFAULT_USERNAMES
 
 
+def test_multi_user_favorites_lifecycle():
+    """Verifies adding, filtering, user attribution, removing and re-adding favorites across multiple users."""
+    p1 = "farm_multi_test_01"
+    p2 = "farm_multi_test_02"
+
+    # Add favorite for VPT
+    add_favorite(p1, username="VPT")
+    assert is_favorite(p1, username="VPT")
+    assert not is_favorite(p1, username="PPT")
+    assert is_favorite(p1)  # Visible to all
+
+    # Add same property for PPT and different property for Guest-1
+    add_favorite(p1, username="PPT")
+    add_favorite(p2, username="Guest-1")
+
+    users_p1 = get_users_for_parcel(p1)
+    assert "VPT" in users_p1
+    assert "PPT" in users_p1
+    assert "Guest-1" not in users_p1
+
+    users_p2 = get_users_for_parcel(p2)
+    assert users_p2 == ["Guest-1"]
+
+    # Active usernames list includes defaults and active users
+    active_users = get_all_active_usernames()
+    assert "VPT" in active_users
+    assert "PPT" in active_users
+    assert "Guest-1" in active_users
+
+    # Remove favorite for VPT only; PPT must remain intact
+    remove_favorite(p1, username="VPT")
+    assert not is_favorite(p1, username="VPT")
+    assert is_favorite(p1, username="PPT")
+    assert is_favorite(p1)  # Still visible to all via PPT
+
+    # Re-add favorite for VPT
+    add_favorite(p1, username="VPT")
+    assert is_favorite(p1, username="VPT")
+
+    # Custom first name support
+    add_favorite(p2, username="Ramesh")
+    assert is_favorite(p2, username="Ramesh")
+    assert "Ramesh" in get_users_for_parcel(p2)
+
+    # Clean up test parcels
+    remove_favorite(p1, username="VPT")
+    remove_favorite(p1, username="PPT")
+    remove_favorite(p2, username="Guest-1")
+    remove_favorite(p2, username="Ramesh")
+
+
+def test_google_map_multi_user_favorites_rendering(sample_parcel):
+    """Verifies that create_google_farmland_map renders user badges and shortlist chips."""
+    sample_parcel["_serial_no"] = 1
+    fav_map = {str(sample_parcel["id"]): ["VPT", "PPT"]}
+
+    m = create_google_farmland_map(
+        parcels=[sample_parcel],
+        origin_lat=DEFAULT_ORIGIN_LAT,
+        origin_lng=DEFAULT_ORIGIN_LNG,
+        origin_name=DEFAULT_ORIGIN_NAME,
+        favorites_by_parcel=fav_map
+    )
+    assert isinstance(m, folium.Map)
+    html = m.get_root().render()
+    # Check that tooltip and popup display saved by VPT and PPT
+    assert "Saved by VPT, PPT" in html
+    assert "Shortlisted by:" in html
+    assert "VPT" in html
+    assert "PPT" in html
+
+
+def test_white_light_button_styling_enforced_in_app():
+    """Verifies that app.py CSS enforces white/light button styles and contains no black button styles."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Check button styling rules
+    assert "background-color: #FFFFFF !important" in code or "background: #FFFFFF !important" in code
+    assert ".stButton > button" in code
+    assert "border: 1.5px solid #CBD5E1 !important" in code
+    # Ensure there is no rule setting button background to black (#000 or #000000 or black)
+    assert "background: #000000" not in code
+    assert "background-color: #000000" not in code
+    assert "background: #000" not in code
+    assert "background-color: black" not in code
