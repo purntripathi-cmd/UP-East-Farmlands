@@ -1968,6 +1968,17 @@ with view_tabs[4]:
         }
         st.dataframe(df_fav, use_container_width=True, height=450, column_config=fav_col_config, hide_index=True)
 
+        # Direct CSV Download for Favorites
+        csv_fav_bytes = df_fav.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="⬇️ Download Shortlisted Favorites (.csv)",
+            data=csv_fav_bytes,
+            file_name=f"UP_East_Favorites_{sel_t5_user_filter.replace(' ', '_')}.csv",
+            mime="text/csv",
+            use_container_width=False,
+            help="Download the displayed shortlisted favorites directly as a CSV spreadsheet."
+        )
+
         st.markdown("#### 🗑️ Select & Delete Shortlisted Favorites")
         st.caption("Check the boxes next to the properties you want to remove, then click 'Delete Selected Favorites'. Unselected favorites are preserved in permanent storage.")
 

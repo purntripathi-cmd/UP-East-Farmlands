@@ -20,6 +20,12 @@ def get_favorites_file_path() -> str:
     return os.path.join(base_dir, "data", "user_favorites.json")
 
 
+def get_favorites_csv_file_path() -> str:
+    """Returns absolute path to user_favorites.csv."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, "data", "user_favorites.csv")
+
+
 def get_candidate_favorites_file_paths() -> List[str]:
     """Returns all potential disk paths where favorites might be persisted."""
     primary = get_favorites_file_path()
@@ -32,6 +38,7 @@ def get_candidate_favorites_file_paths() -> List[str]:
 
     candidates = [
         primary,
+        os.path.join(data_dir, "user_favorites.csv"),
         os.path.join(data_dir, "favorites.json"),
         os.path.join(data_dir, "saved_favorites.json"),
     ]
@@ -57,6 +64,25 @@ def load_raw_favorites() -> List[Dict[str, Any]]:
         if not os.path.exists(file_path):
             continue
         try:
+            if file_path.endswith(".csv"):
+                import csv
+                with open(file_path, "r", encoding="utf-8") as f_csv:
+                    reader = csv.DictReader(f_csv)
+                    for row in reader:
+                        pid = str(row.get("parcel_id") or row.get("id") or "").strip()
+                        if not pid:
+                            continue
+                        clean_u = str(row.get("username") or "Untagged").strip()
+                        key = (pid, clean_u.lower())
+                        if key not in seen:
+                            seen.add(key)
+                            all_records.append({
+                                "parcel_id": pid,
+                                "username": clean_u,
+                                "timestamp": row.get("timestamp") or datetime.now().strftime("%d %b %Y, %H:%M IST")
+                            })
+                continue
+
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
@@ -135,6 +161,19 @@ def save_raw_favorites(records: List[Dict[str, Any]]) -> bool:
 
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(deduped, f, indent=2)
+
+        # Mirror to CSV file for immediate user inspection, QGIS, and spreadsheet access
+        csv_path = get_favorites_csv_file_path()
+        try:
+            import csv
+            with open(csv_path, "w", newline="", encoding="utf-8") as f_csv:
+                writer = csv.writer(f_csv)
+                writer.writerow(["parcel_id", "username", "timestamp"])
+                for item in deduped:
+                    writer.writerow([item["parcel_id"], item["username"], item.get("timestamp", "")])
+        except Exception:
+            pass
+
         return True
     except Exception:
         return False
