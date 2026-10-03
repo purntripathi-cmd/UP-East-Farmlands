@@ -685,3 +685,23 @@ def test_white_light_button_styling_enforced_in_app():
     assert "background-color: #000000" not in code
     assert "background: #000" not in code
     assert "background-color: black" not in code
+
+
+def test_streamlit_light_theme_and_white_header_config():
+    """Verifies that .streamlit/config.toml and app.py enforce white header and light theme (no black bars)."""
+    config_path = os.path.join(os.path.dirname(__file__), "..", ".streamlit", "config.toml")
+    with open(config_path, "r", encoding="utf-8") as f:
+        toml_content = f.read()
+
+    assert 'base = "light"' in toml_content
+    assert 'backgroundColor = "#FFFFFF"' in toml_content
+    assert "#0B1120" not in toml_content  # No dark black background
+    assert "#1E293B" not in toml_content
+
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    assert 'header[data-testid="stHeader"]' in app_code
+    assert 'div[data-testid="stTabs"]' in app_code
+

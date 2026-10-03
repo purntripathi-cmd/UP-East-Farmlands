@@ -269,7 +269,7 @@ def create_google_farmland_map(
 
         popup_html = f"""
         <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 250px; line-height: 1.4;">
-            <div style="background: {'#991B1B' if is_sc_st else ('#6D28D9' if is_fav else '#1E293B')}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
+            <div style="background: {'#991B1B' if is_sc_st else ('#6D28D9' if is_fav else '#1D4ED8')}; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
                 🌾 #{sno}. {p.get('name', 'Farmland Estate')} {'★' if is_fav else ''}
             </div>
             <div style="padding: 8px 10px; border: 1px solid #CBD5E1; border-top: none; border-radius: 0 0 6px 6px;">

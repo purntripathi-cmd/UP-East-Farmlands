@@ -95,17 +95,76 @@ st.markdown("""
     /* Global White Background & Clean Institutional Theme */
     .stApp, .main, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"] {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #0F172A !important;
     }
     body {
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
         color: #0F172A !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 2.5rem !important;
         background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+    }
+
+    /* Streamlit Top Header & Navigation Bar: Pure Seamless White (Zero Black) */
+    header,
+    header[data-testid="stHeader"],
+    div[data-testid="stHeader"],
+    [data-testid="stHeader"],
+    .stAppHeader {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+    }
+    header[data-testid="stHeader"] svg,
+    header[data-testid="stHeader"] button,
+    header[data-testid="stHeader"] a,
+    header[data-testid="stHeader"] span {
+        color: #475569 !important;
+        fill: #475569 !important;
+    }
+
+    /* Tab Panels & Containers: Pure White Across All Tabs */
+    div[data-testid="stTabs"],
+    div[data-testid="stTabs"] > div,
+    div[data-baseweb="tab-panel"],
+    div[data-testid="stTabContent"] {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+    }
+
+    /* Expanders, Dataframes & Tables: Crisp Light Institutional Background */
+    div[data-testid="stExpander"],
+    .streamlit-expanderHeader,
+    .streamlit-expanderContent,
+    details {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        border-color: #E2E8F0 !important;
+    }
+    .stDataFrame,
+    div[data-testid="stDataFrame"],
+    div[data-testid="stTable"] {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+    }
+
+    /* Menus, Popovers, and Dropdown Lists */
+    div[data-baseweb="popover"],
+    div[data-baseweb="menu"],
+    ul[data-baseweb="menu"],
+    li[data-baseweb="menu-item"] {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+        color: #0F172A !important;
     }
     
     /* Clean Dark Headings & Readable Text */
@@ -208,11 +267,14 @@ st.markdown("""
     /* General Tab Tile Styling */
     button[data-testid="stTab"],
     div[data-baseweb="tab-list"] > button {
+        background-color: #F8FAFC !important;
+        background: #F8FAFC !important;
+        color: #0F172A !important;
         border-radius: 10px !important;
         padding: 8px 16px !important;
         font-weight: 700 !important;
         font-size: 13.5px !important;
-        border: 1.5px solid transparent !important;
+        border: 1.5px solid #E2E8F0 !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
         cursor: pointer !important;
         white-space: nowrap !important;
