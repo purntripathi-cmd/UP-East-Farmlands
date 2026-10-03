@@ -2,9 +2,11 @@
 UP East & Varanasi Farmlands Intelligence Platform
 Streamlit Web Application solely dedicated to Varanasi and surrounding Eastern UP agricultural estates.
 Features:
+- Mobile-Friendly Adaptive Layout (Media queries, responsive grid, touch-friendly touch targets)
+- Integrated Google Satellite & Roadmap with Search & Micro-Market Auto-Centering
+- Interactive Map Pinning: Click on map to add farmland properties to master inventory
 - Selectable Origin Landmark (Default: Kacheri Varanasi near Varuna Pul)
 - Concentric Distance Rings (20 km, 40 km, 60 km, 80 km, 100 km, 200 km buffer)
-- Google Maps Satellite Hybrid / Roadmap integration with concentric buffer overlays
 - Comprehensive Farmland Table in Tab 1 with full details summary
 - Independent Critique AI Engine (Negative feedback auditing, 8 risk vectors, Govt site verification)
 - Persistent User Favorites / Shortlisting system
@@ -25,7 +27,11 @@ from utils.geo_routing import (
     DEFAULT_ORIGIN_LNG,
     DEFAULT_ORIGIN_NAME,
     load_landmarks,
-    compute_parcel_routing
+    compute_parcel_routing,
+    assign_concentric_ring,
+    haversine_distance_km,
+    estimate_road_distance_km,
+    estimate_driving_time_minutes
 )
 from utils.land_units import LandUnitConverter
 from utils.favorites_manager import (
@@ -50,16 +56,17 @@ from utils.farmland_view import (
     render_seller_contact_card_html
 )
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
+from utils.farmland_repository import create_and_add_farmland, load_all_parcels
 
 # Page Configuration
 st.set_page_config(
     page_title="UP East Farmlands | Varanasi Agro-Intelligence",
     page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom Styling for Professional Institutional Aesthetics
+# Custom Styling for Professional Institutional Aesthetics and Mobile Responsiveness
 st.markdown("""
 <style>
     .main {
@@ -67,22 +74,62 @@ st.markdown("""
     }
     .stMetric {
         background: #1E293B;
-        padding: 12px;
+        padding: 10px 12px;
         border-radius: 8px;
         border: 1px solid #334155;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 20px;
+        font-size: 19px;
         font-weight: 700;
         color: #10B981;
     }
     div[data-testid="stMetricLabel"] {
         color: #94A3B8;
-        font-size: 12px;
+        font-size: 11px;
     }
     .block-container {
-        padding-top: 1.2rem;
+        padding-top: 1rem;
         padding-bottom: 2rem;
+    }
+
+    /* Modern Mobile Responsive Layout */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            padding-top: 0.6rem !important;
+        }
+        /* Wrap KPI metrics row into 2 neat columns on phone screens */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            flex: 1 1 calc(50% - 6px) !important;
+            min-width: calc(50% - 6px) !important;
+        }
+        h1 {
+            font-size: 1.35rem !important;
+            line-height: 1.2 !important;
+        }
+        h2 {
+            font-size: 1.15rem !important;
+        }
+        h3 {
+            font-size: 1.05rem !important;
+        }
+        /* Mobile touch targets with min 44px ergonomics */
+        button[kind="primary"], button[kind="secondary"], .stButton > button {
+            min-height: 44px !important;
+            font-size: 13px !important;
+            border-radius: 6px !important;
+        }
+        /* Horizontal scroll for wide dataframes */
+        div[data-testid="stDataFrame"] {
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -100,17 +147,18 @@ def render_html_block(html_content: str):
 @st.cache_data
 def load_farmlands_dataset():
     """Loads master JSON dataset of Varanasi and UP East Farmlands."""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(base_dir, "data", "up_east_farmlands.json")
-    if os.path.exists(data_path):
-        with open(data_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+    return load_all_parcels()
 
 
-# Initialize session state for favorites
+# Initialize session states
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = load_favorites()
+
+if "map_clicked_coord" not in st.session_state:
+    st.session_state["map_clicked_coord"] = None
+
+if "map_search_term" not in st.session_state:
+    st.session_state["map_search_term"] = ""
 
 # Load Base Datasets
 all_parcels = load_farmlands_dataset()
@@ -133,7 +181,7 @@ selected_lm_name = st.sidebar.selectbox(
     "Road Distance Measured From:",
     options=list(landmark_dict.keys()),
     index=list(landmark_dict.keys()).index(default_lm_name) if default_lm_name in landmark_dict else 0,
-    help="Default is Kacheri Varanasi near Varuna Pul (Collectorate & District Courts). Road distances and Google Directions dynamically recalculate from this point."
+    help="Default is Kacheri Varanasi near Varuna Pul (Collectorate & District Courts). Road distances dynamically recalculate from this point."
 )
 active_lm = landmark_dict[selected_lm_name]
 origin_lat = float(active_lm["lat"])
@@ -188,7 +236,7 @@ selected_districts = st.sidebar.multiselect(
 )
 
 # 6. Price per Acre Range Slider
-prices = [float(p.get("price_per_acre_lakhs", 25.0)) for p in all_parcels]
+prices = [float(p.get("price_per_acre_lakhs", 25.0)) for p in all_parcels] if all_parcels else [25.0]
 min_price, max_price = min(prices), max(prices)
 selected_price_range = st.sidebar.slider(
     "Price per Acre (₹ Lakhs):",
@@ -283,10 +331,10 @@ filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km"
 # -------------------------------------------------------------
 st.title("🌾 UP East & Varanasi Farmlands Intelligence Platform")
 st.markdown(
-    f"**Concentric Agro-Intelligence, Independent Critique AI & Due Diligence** | Origin Reference: **{active_lm['name']}**"
+    f"**Concentric Agro-Intelligence & Due Diligence** | Origin Reference: **{active_lm['name']}**"
 )
 
-# Top KPI Metric Cards
+# Top KPI Metric Cards (Responsive on Mobile)
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 with kpi1:
     st.metric("Verified Holdings", f"{len(filtered_parcels)} / {len(all_parcels)}")
@@ -315,8 +363,8 @@ st.markdown("---")
 # TAB NAVIGATION (Clean, focused strictly on Farmlands)
 # -------------------------------------------------------------
 view_tabs = st.tabs([
-    "🗺️ Interactive Google Map & Property Table",
-    "🔍 Detailed Farmland Telemetry & Legal Audit",
+    "🗺️ Interactive Google Map & Search",
+    "🔍 Detailed Farmland Telemetry & Dossier",
     "📊 Master Farmland Comparison Ledger",
     "📰 Published News & Caveat Notices",
     "⭐ Shortlisted Favorites Matrix",
@@ -324,53 +372,257 @@ view_tabs = st.tabs([
 ])
 
 # -------------------------------------------------------------
-# TAB 1: INTERACTIVE GOOGLE MAP & PROPERTY SUMMARY TABLE
+# TAB 1: INTERACTIVE GOOGLE MAP, SEARCH & PROPERTY CREATOR
 # -------------------------------------------------------------
 with view_tabs[0]:
     st.markdown(f"### 🗺️ Google Satellite & Hybrid Map with Concentric Buffers")
-    st.caption(f"Showing concentric radial buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) around **{active_lm['name']}** with live road navigation.")
+    st.caption(f"Showing concentric radial buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) around **{active_lm['name']}**. Search any area, or click anywhere on the map to add a new farmland property!")
 
+    # Search Bar & Micro-Market Jump
+    s_col1, s_col2 = st.columns([2.5, 1.2])
+    with s_col1:
+        map_search_input = st.text_input(
+            "🔍 Search Farmland Properties or Micro-Markets on Map:",
+            value=st.session_state.get("map_search_term", ""),
+            placeholder="Type name, village, tehsil, district, or highway (e.g. Rohania, Sevapuri, Chandauli, Mirzapur, NH-19)...",
+            key="tab1_search_bar"
+        )
+    with s_col2:
+        micro_market_jump = st.selectbox(
+            "📍 Jump to Micro-Market:",
+            options=[
+                "All Regions",
+                "Rohania / Ring Road Ph-2",
+                "Babatpur Airport Agro-Belt",
+                "Chandauli / Mughalsarai",
+                "Mirzapur / Vindhya Slopes",
+                "Jaunpur Gomti Basin",
+                "Ghazipur Ganga Alluvium"
+            ],
+            key="micro_market_select"
+        )
+
+    # Micro-market coordinate lookup
+    micro_market_coords = {
+        "Rohania / Ring Road Ph-2": (25.2650, 82.9050, 11),
+        "Babatpur Airport Agro-Belt": (25.4520, 82.8590, 11),
+        "Chandauli / Mughalsarai": (25.2600, 83.1600, 11),
+        "Mirzapur / Vindhya Slopes": (25.1450, 82.5650, 11),
+        "Jaunpur Gomti Basin": (25.7464, 82.6837, 10),
+        "Ghazipur Ganga Alluvium": (25.5840, 83.5770, 10),
+    }
+
+    # Apply search filter to map display
+    display_parcels = list(filtered_parcels)
+    search_q = map_search_input.strip().lower()
+
+    center_lat = origin_lat
+    center_lng = origin_lng
+    map_zoom = 9 if len(display_parcels) > 10 else 10
+
+    if micro_market_jump in micro_market_coords:
+        mm_lat, mm_lng, mm_zoom = micro_market_coords[micro_market_jump]
+        center_lat, center_lng, map_zoom = mm_lat, mm_lng, mm_zoom
+
+    if search_q:
+        display_parcels = [
+            p for p in display_parcels
+            if search_q in p.get("name", "").lower()
+            or search_q in p.get("location", "").lower()
+            or search_q in p.get("regional_district", "").lower()
+            or search_q in p.get("khasra_khatauni_number", "").lower()
+            or search_q in p.get("published_news_title", "").lower()
+        ]
+        st.info(f"🔍 **Search Filter Active:** Found **{len(display_parcels)}** properties matching '{map_search_input}'.")
+        if display_parcels:
+            center_lat = float(display_parcels[0].get("lat", origin_lat))
+            center_lng = float(display_parcels[0].get("lng", origin_lng))
+            map_zoom = 11
+
+    # Map Layout & Legend Controls
     map_c1, map_c2 = st.columns([3, 1])
     with map_c2:
-        st.markdown("#### 🧭 Map Legend & Controls")
+        st.markdown("#### 🧭 Map Legend")
         st.markdown("""
-        - 🌟 **Dark Red Star:** Active Origin (**Kacheri Varanasi near Varuna Pul**)
-        - 🟢 **20 km Ring:** Urban Fringe & Ring Road Phase 2
-        - 🔵 **40 km Ring:** Chandauli / Mughalsarai / Mirzapur border
+        - 🌟 **Dark Red Star:** Active Origin (**Kacheri Varanasi**)
+        - 🟢 **20 km Ring:** Urban Fringe / Ring Road
+        - 🔵 **40 km Ring:** Chandauli / Mughalsarai
         - 🟡 **60 km Ring:** Ghazipur / Jaunpur Core
-        - 🟣 **80 km Ring:** Azamgarh / Robertsganj approach
-        - 🔴 **100 km Ring:** Outer Purvanchal perimeter
+        - 🟣 **80 km Ring:** Azamgarh / Robertsganj
+        - 🔴 **100 km Ring:** Outer Perimeter
         - 🌿 **Green Pin:** Sovereign Grade A+ (Score ≥ 90)
         - 🔷 **Blue Pin:** Institutional Grade A (Score 75-89)
-        - 💜 **Purple Pin:** Favorited Parcel
+        - 💜 **Purple Pin:** Starred Favorite
+        - 📍 **Red Target:** Pinned / Clicked Location
         """)
         show_concentric = st.checkbox("Overlay Concentric Buffer Rings", value=True)
+        if st.session_state.get("map_clicked_coord"):
+            if st.button("❌ Clear Pinned Map Coordinate", use_container_width=True):
+                st.session_state["map_clicked_coord"] = None
+                st.rerun()
 
     with map_c1:
-        if filtered_parcels:
-            folium_map = create_google_farmland_map(
-                parcels=filtered_parcels,
-                origin_lat=origin_lat,
-                origin_lng=origin_lng,
-                origin_name=active_lm["name"],
-                favorite_ids=st.session_state["favorites"],
-                show_concentric_rings=show_concentric,
-                zoom_start=9 if len(filtered_parcels) > 10 else 10
-            )
-            st_folium(folium_map, width="100%", height=520)
-        else:
-            st.warning("No farmlands match the current filter criteria. Broaden your search filters.")
+        selected_pin_obj = None
+        if st.session_state.get("map_clicked_coord"):
+            c_lat, c_lng = st.session_state["map_clicked_coord"]
+            selected_pin_obj = {
+                "lat": c_lat,
+                "lng": c_lng,
+                "title": "Selected Map Coordinate",
+                "description": "Complete the form below to add this farmland property to the master inventory."
+            }
+
+        folium_map = create_google_farmland_map(
+            parcels=display_parcels,
+            origin_lat=origin_lat,
+            origin_lng=origin_lng,
+            origin_name=active_lm["name"],
+            favorite_ids=st.session_state["favorites"],
+            show_concentric_rings=show_concentric,
+            center_lat=center_lat,
+            center_lng=center_lng,
+            zoom_start=map_zoom,
+            selected_pin=selected_pin_obj
+        )
+
+        st.caption("💡 **Tip:** Tap or click anywhere on the Google Map to pin coordinates and instantly add a new property!")
+        map_output = st_folium(
+            folium_map,
+            width="100%",
+            height=440,
+            key="up_east_interactive_folium_map",
+            returned_objects=["last_clicked"]
+        )
+
+        # Check for map clicks
+        if map_output and map_output.get("last_clicked"):
+            click_dict = map_output["last_clicked"]
+            click_lat = round(float(click_dict["lat"]), 5)
+            click_lng = round(float(click_dict["lng"]), 5)
+            curr_coord = st.session_state.get("map_clicked_coord")
+            if curr_coord is None or (abs(curr_coord[0] - click_lat) > 0.0001 or abs(curr_coord[1] - click_lng) > 0.0001):
+                st.session_state["map_clicked_coord"] = (click_lat, click_lng)
+                st.rerun()
 
     # -------------------------------------------------------------
-    # PROPERTY SUMMARY TABLE IN TAB 1 (EXPLICIT USER REQUEST)
+    # INTERACTIVE ADD PROPERTY FORM (FROM MAP CLICK OR MANUAL PIN)
+    # -------------------------------------------------------------
+    is_coord_pinned = st.session_state.get("map_clicked_coord") is not None
+    pinned_lat = st.session_state["map_clicked_coord"][0] if is_coord_pinned else origin_lat
+    pinned_lng = st.session_state["map_clicked_coord"][1] if is_coord_pinned else origin_lng
+
+    # Calculate real-time routing for pinned coordinates
+    pinned_aerial = haversine_distance_km(origin_lat, origin_lng, pinned_lat, pinned_lng)
+    pinned_road = estimate_road_distance_km(pinned_aerial)
+    pinned_mins = estimate_driving_time_minutes(pinned_road)
+    pinned_ring = assign_concentric_ring(pinned_aerial)
+
+    expander_title = f"📍 ➕ Add Farmland Property from Map {'[📍 PINNED: ' + str(pinned_lat) + ', ' + str(pinned_lng) + ']' if is_coord_pinned else '(Click Map or Enter Coordinates)'}"
+    
+    with st.expander(expander_title, expanded=is_coord_pinned):
+        st.markdown("#### 🌾 Discover & Register Farmland Parcel into Master Portfolio")
+        st.caption(f"Calculates actual road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha conversions, sweet water TDS estimates, and runs Independent Critique AI audit.")
+
+        p_stat_col1, p_stat_col2, p_stat_col3 = st.columns(3)
+        with p_stat_col1:
+            st.info(f"🚗 **Calculated Road Distance:** {pinned_road} km (~{pinned_mins} mins drive)")
+        with p_stat_col2:
+            st.info(f"⭕ **Concentric Buffer Ring:** {pinned_ring}")
+        with p_stat_col3:
+            st.info(f"🏛️ **Reference Origin:** {active_lm['name'].split('(')[0].strip()[:24]}")
+
+        with st.form("add_farmland_from_map_form", clear_on_submit=False):
+            f_c1, f_c2 = st.columns([2, 1.2])
+            with f_c1:
+                prop_name = st.text_input("Property / Estate Name *", placeholder="e.g. Rohania Ring Road Organic Agro Estate")
+            with f_c2:
+                prop_district = st.selectbox(
+                    "District *",
+                    options=["Varanasi", "Chandauli", "Mirzapur", "Jaunpur", "Ghazipur", "Azamgarh", "Prayagraj", "Bhadohi", "Sonbhadra", "Ballia", "Mau", "Kaimur"],
+                    index=0
+                )
+
+            f_loc1, f_loc2 = st.columns([2, 1.2])
+            with f_loc1:
+                prop_location = st.text_input("Tehsil / Village / Landmark *", placeholder="e.g. Sevapuri Block, Near Kapsethi Crossing")
+            with f_loc2:
+                prop_khasra = st.text_input("Khasra / Khatauni Number", value="Khasra Verified on UP Bhulekh")
+
+            f_coord1, f_coord2 = st.columns(2)
+            with f_coord1:
+                prop_lat = st.number_input("Latitude (from Map Click or Manual)", value=float(pinned_lat), format="%.5f")
+            with f_coord2:
+                prop_lng = st.number_input("Longitude (from Map Click or Manual)", value=float(pinned_lng), format="%.5f")
+
+            f_size1, f_size2 = st.columns(2)
+            with f_size1:
+                prop_acres = st.number_input("Parcel Size (Acres) *", min_value=0.5, max_value=500.0, value=5.0, step=0.5)
+            with f_size2:
+                prop_rate_lakhs = st.number_input("Price per Acre (₹ Lakhs) *", min_value=1.0, max_value=500.0, value=25.0, step=1.0)
+
+            # Live unit and price calculation preview
+            est_pakka_bigha = prop_acres * 1.60
+            est_biswa = est_pakka_bigha * 20
+            est_cr = round((prop_acres * prop_rate_lakhs) / 100.0, 2)
+            st.markdown(
+                f"📐 **Purvanchal Land Units:** `{est_pakka_bigha:.2f}` Pakka Bigha (`{est_biswa:.1f}` Biswa / `{est_biswa:.1f}` Kattha) • **Total Deal Ticket:** `₹{est_cr:.2f} Cr`"
+            )
+
+            f_seller1, f_seller2, f_seller3 = st.columns(3)
+            with f_seller1:
+                prop_seller_name = st.text_input("Landowner / Rep Name *", value="Landowner Representative")
+            with f_seller2:
+                prop_seller_phone = st.text_input("Contact Mobile Phone *", value="+91 94150 12345")
+            with f_seller3:
+                prop_seller_cat = st.selectbox(
+                    "Seller Category",
+                    options=["Direct Landowner / Farmer", "Broker / Mandi Aggregator", "Bank Distress Recovery Rep", "Govt Land Board"],
+                    index=0
+                )
+
+            # Optional published news notice
+            f_news1, f_news2 = st.columns(2)
+            with f_news1:
+                prop_news_title = st.text_input("Published News Headline / Gazette Notice (Optional)", placeholder="e.g. UP Bhulekh Section 34 Clean Title Gazette Notification")
+            with f_news2:
+                prop_news_source = st.text_input("Publication Source / E-Paper (Optional)", placeholder="e.g. Dainik Jagran Varanasi Edition")
+
+            submit_prop = st.form_submit_button("➕ Save & Register Farmland to Master Inventory", type="primary", use_container_width=True)
+
+            if submit_prop:
+                success, msg, new_item = create_and_add_farmland(
+                    name=prop_name,
+                    district=prop_district,
+                    location=prop_location,
+                    lat=prop_lat,
+                    lng=prop_lng,
+                    size_acres=prop_acres,
+                    price_per_acre_lakhs=prop_rate_lakhs,
+                    contact_person=prop_seller_name,
+                    contact_phone=prop_seller_phone,
+                    seller_category=prop_seller_cat,
+                    khasra_number=prop_khasra,
+                    news_title=prop_news_title,
+                    news_source=prop_news_source
+                )
+                if success:
+                    st.success(f"🎉 {msg}")
+                    st.session_state["map_clicked_coord"] = None
+                    st.cache_data.clear()
+                    st.rerun()
+                else:
+                    st.error(f"❌ Error: {msg}")
+
+    # -------------------------------------------------------------
+    # PROPERTY SUMMARY TABLE IN TAB 1
     # -------------------------------------------------------------
     st.markdown("---")
     st.markdown("### 📋 Complete Property Summary & Critique AI Ledger")
-    st.caption(f"Summary table of all **{len(filtered_parcels)}** properties matching filters, with actual driving road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha units, and Critique AI risk scores.")
+    st.caption(f"Summary table of all **{len(display_parcels)}** properties matching filters, with actual driving road distance from **{active_lm['name']}**, Purvanchal Pakka Bigha units, and Critique AI risk scores.")
 
-    if filtered_parcels:
+    if display_parcels:
         tab1_rows = []
-        for idx, p in enumerate(filtered_parcels):
+        for idx, p in enumerate(display_parcels):
             pid = str(p.get("id"))
             r = routings.get(pid, {})
             crit = critique_cache.get(pid, {})
@@ -405,7 +657,7 @@ with view_tabs[0]:
         df_tab1 = pd.DataFrame(tab1_rows)
         st.dataframe(df_tab1, use_container_width=True, height=400)
     else:
-        st.info("No records matching filter.")
+        st.info("No records matching filter or search query.")
 
 # -------------------------------------------------------------
 # TAB 2: DETAILED FARMLAND TELEMETRY & LEGAL AUDIT
@@ -415,7 +667,6 @@ with view_tabs[1]:
     st.caption("Inspect complete dossiers with soil parameters, groundwater TDS, independent critique risk findings, and UP Bhulekh verified records.")
 
     if filtered_parcels:
-        # Selector for active farmland card
         farm_names = [f"{p['name']} ({routings[str(p['id'])]['road_km']} km | ₹{p['price_per_acre_lakhs']}L/Acre)" for p in filtered_parcels]
         selected_farm_idx = st.selectbox(
             "Select Farmland to Inspect Full Dossier:",
@@ -444,7 +695,7 @@ with view_tabs[1]:
         # 1. Top Summary Card (Clean HTML rendering)
         render_html_block(render_farmland_summary_card_html(active_farm, active_routing, is_fav))
 
-        # 2. Split Columns: Agronomics & Legal/News/Critique
+        # 2. Split Columns: Agronomics & Legal/News
         col_agri, col_legal = st.columns([1.5, 1.5])
         with col_agri:
             render_html_block(render_agronomic_telemetry_html(active_farm))
@@ -526,7 +777,7 @@ with view_tabs[3]:
 
             news_card_html = f"""
 <div style="background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 10px;">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
 <span style="color: #FBBF24; font-weight: 700; font-size: 13px;">📰 {news_src}</span>
 <span style="background: #451A03; color: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 11px;">{notice_type}</span>
 </div>
@@ -534,9 +785,9 @@ with view_tabs[3]:
 <div style="font-size: 12px; color: #94A3B8; margin-bottom: 8px;">
 <b>Estate:</b> {p.get('name')} • <b>District:</b> {p.get('regional_district')} • <b>Driving Distance:</b> {r.get('road_km')} km from {active_lm['name'].split('(')[0].strip()}
 </div>
-<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+<div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; flex-wrap: wrap; gap: 6px;">
 <span style="color: #64748B;">Published Date: {news_date}</span>
-<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 600;">Verify Original Publication ↗</a>
+<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 600; min-height: 40px; display: inline-flex; align-items: center;">Verify Original Publication ↗</a>
 </div>
 </div>
 """
@@ -637,7 +888,7 @@ with view_tabs[5]:
 # Footer
 st.markdown("---")
 render_html_block(
-    "<div style='text-align: center; color: #64748B; font-size: 12px; padding: 10px;'>"
+    "<div style='text-align: center; color: #64748B; font-size: 11px; padding: 10px; line-height: 1.5;'>"
     "UP East & Varanasi Farmlands Intelligence Platform • Sentinel-2 Multispectral Telemetry • UP Bhulekh RTC Verification • Independent Critique AI Engine • Google Maps Satellite Integration"
     "</div>"
 )

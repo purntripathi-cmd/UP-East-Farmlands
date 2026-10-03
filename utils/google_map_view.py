@@ -2,19 +2,19 @@
 Google Maps Interactive Folium Engine
 Renders high-resolution Google Satellite, Hybrid, Roadmap, and Terrain layers.
 Overlays concentric radial buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) from Kacheri Varanasi,
-and plots individual farmland parcels with telemetry popups.
+plots individual farmland parcels with telemetry popups,
+and supports dynamic marker placement for newly clicked or searched coordinates.
 """
 
 import folium
 from folium import plugins
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Optional, Tuple
 from utils.geo_routing import (
     DEFAULT_ORIGIN_LAT,
     DEFAULT_ORIGIN_LNG,
     DEFAULT_ORIGIN_NAME,
     compute_parcel_routing
 )
-
 
 # Official Google Maps Web Tile Endpoints
 GOOGLE_TILES = {
@@ -57,20 +57,27 @@ def create_google_farmland_map(
     origin_name: str = DEFAULT_ORIGIN_NAME,
     favorite_ids: Set[str] = None,
     show_concentric_rings: bool = True,
-    zoom_start: int = 10
+    center_lat: Optional[float] = None,
+    center_lng: Optional[float] = None,
+    zoom_start: int = 10,
+    selected_pin: Optional[Dict[str, Any]] = None
 ) -> folium.Map:
     """
     Constructs an interactive Folium Map using Google Maps satellite/hybrid tiles,
-    with an active landmark origin marker and farmland estate pins.
+    with an active landmark origin marker, farmland estate pins,
+    and optional user-clicked / searched target pin.
     """
     fav_set = favorite_ids or set()
+    map_center_lat = center_lat if center_lat is not None else origin_lat
+    map_center_lng = center_lng if center_lng is not None else origin_lng
 
-    # Center map on active origin landmark
+    # Initialize Folium Map with mobile-friendly gestures
     m = folium.Map(
-        location=[origin_lat, origin_lng],
+        location=[map_center_lat, map_center_lng],
         zoom_start=zoom_start,
         tiles=None,
-        control_scale=True
+        control_scale=True,
+        prefer_canvas=True
     )
 
     # Add Google Maps Tile Layers
@@ -108,20 +115,20 @@ def create_google_farmland_map(
 
     # 1. Plot Origin Benchmark Landmark (Kacheri Varanasi / Selected Origin)
     origin_popup = f"""
-    <div style="font-family: Arial, sans-serif; font-size: 13px; color: #0F172A; min-width: 220px;">
-        <div style="background: #D97706; color: white; padding: 6px 10px; border-radius: 4px; font-weight: bold; margin-bottom: 6px;">
+    <div style="font-family: Arial, sans-serif; font-size: 13px; color: #0F172A; min-width: 200px;">
+        <div style="background: #D97706; color: white; padding: 5px 8px; border-radius: 4px; font-weight: bold; margin-bottom: 4px;">
             🏛️ Benchmark Reference Zero-Point
         </div>
         <b>{origin_name}</b><br>
         <span style="color: #64748B; font-size: 11px;">Lat: {origin_lat:.4f}, Lng: {origin_lng:.4f}</span>
-        <div style="margin-top: 6px; font-size: 12px; color: #475569;">
-            All road distances, drive times, and concentric radial buffers are measured from this landmark.
+        <div style="margin-top: 4px; font-size: 11px; color: #475569;">
+            All road distances, drive times, and concentric radial buffers are measured from this point.
         </div>
     </div>
     """
     folium.Marker(
         location=[origin_lat, origin_lng],
-        popup=folium.Popup(origin_popup, max_width=300),
+        popup=folium.Popup(origin_popup, max_width=280),
         tooltip=f"📍 Reference Landmark: {origin_name}",
         icon=folium.Icon(color="darkred", icon="star", prefix="fa")
     ).add_to(m)
@@ -160,7 +167,6 @@ def create_google_farmland_map(
 
         score = p.get("due_diligence_score", 85)
         grade = p.get("due_diligence_grade", "A Institutional Grade")
-        sourcing_badge = p.get("sourcing_tier_badge", "Tier 1")
 
         # Color coding by grade or favorite
         if is_fav:
@@ -185,41 +191,38 @@ def create_google_farmland_map(
         news_url = p.get("published_news_url", "https://upbhulekh.gov.in/")
         news_date = p.get("published_news_date", "Recent")
 
-        fav_badge = "⭐ FAVORITED" if is_fav else ""
-
         popup_html = f"""
-        <div style="font-family: Arial, sans-serif; font-size: 13px; color: #0F172A; min-width: 260px; line-height: 1.4;">
+        <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 240px; line-height: 1.4;">
             <div style="background: #1E293B; color: white; padding: 6px 10px; border-radius: 6px 6px 0 0; font-weight: bold;">
                 🌾 {p.get('name', 'Farmland Estate')}
             </div>
-            <div style="padding: 10px; border: 1px solid #CBD5E1; border-top: none; border-radius: 0 0 6px 6px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <div style="padding: 8px 10px; border: 1px solid #CBD5E1; border-top: none; border-radius: 0 0 6px 6px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                     <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{p.get('regional_district', 'Varanasi')}</span>
                     <span style="font-weight: bold; color: #10B981; font-size: 12px;">₹{p.get('price_per_acre_lakhs')} L/Acre</span>
                 </div>
                 
-                <div style="background: #F8FAFC; padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; font-size: 12px;">
-                    <b>🚗 Actual Driving Distance:</b> <span style="color: #2563EB; font-weight: bold;">{road_km} km</span> ({drive_time})<br>
-                    <span style="color: #64748B; font-size: 11px;">From: {origin_name.split('(')[0].strip()}</span>
+                <div style="background: #F8FAFC; padding: 4px 6px; border-radius: 4px; margin-bottom: 6px; font-size: 11px;">
+                    <b>🚗 Road Distance:</b> <span style="color: #2563EB; font-weight: bold;">{road_km} km</span> ({drive_time})<br>
+                    <span style="color: #64748B;">From: {origin_name.split('(')[0].strip()[:24]}</span>
                 </div>
 
-                <div style="font-size: 12px; margin-bottom: 6px;">
-                    <b>📐 Parcel Size:</b> {p.get('size_acres')} Acres ({p.get('size_local_units', '')})<br>
-                    <b>💧 Water TDS:</b> {p.get('water_tds_ppm', 220)} ppm • <b>Soil pH:</b> {p.get('soil_ph', 7.2)}<br>
-                    <b>🛡️ Due Diligence:</b> <b style="color: #059669;">{score}/100</b> ({grade})
+                <div style="font-size: 11px; margin-bottom: 6px;">
+                    <b>📐 Size:</b> {p.get('size_acres')} Acres ({p.get('size_local_units', '')})<br>
+                    <b>💧 TDS:</b> {p.get('water_tds_ppm', 220)} ppm • <b>Soil pH:</b> {p.get('soil_ph', 7.2)}<br>
+                    <b>🛡️ DD Score:</b> <b style="color: #059669;">{score}/100</b> ({grade})
                 </div>
 
-                <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 6px; border-radius: 4px; font-size: 11px; margin-bottom: 8px;">
-                    <b>📰 Published Notice:</b> {news_title}<br>
-                    <span style="color: #92400E;">Source: {news_source} ({news_date})</span>
-                    <a href="{news_url}" target="_blank" style="color: #D97706; font-weight: bold; text-decoration: underline; margin-left: 4px;">Verify ↗</a>
+                <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 4px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 6px;">
+                    <b>📰 {news_source}:</b> {news_title[:45]}...
+                    <a href="{news_url}" target="_blank" style="color: #D97706; font-weight: bold; text-decoration: underline;">Verify ↗</a>
                 </div>
 
-                <div style="display: flex; gap: 6px; margin-top: 8px;">
-                    <a href="{directions_url}" target="_blank" style="flex: 1; text-align: center; background: #2563EB; color: white; padding: 6px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold;">
-                        🗺️ Google Directions ↗
+                <div style="display: flex; gap: 4px; margin-top: 6px;">
+                    <a href="{directions_url}" target="_blank" style="flex: 1; text-align: center; background: #2563EB; color: white; padding: 6px 4px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold;">
+                        🗺️ Directions ↗
                     </a>
-                    <a href="{p.get('contact_whatsapp', '#')}" target="_blank" style="flex: 1; text-align: center; background: #16A34A; color: white; padding: 6px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold;">
+                    <a href="{p.get('contact_whatsapp', '#')}" target="_blank" style="flex: 1; text-align: center; background: #16A34A; color: white; padding: 6px 4px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold;">
                         💬 WhatsApp ↗
                     </a>
                 </div>
@@ -229,10 +232,47 @@ def create_google_farmland_map(
 
         folium.Marker(
             location=[p_lat, p_lng],
-            popup=folium.Popup(popup_html, max_width=320),
+            popup=folium.Popup(popup_html, max_width=300),
             tooltip=f"{'⭐ ' if is_fav else ''}{p.get('name')} | {road_km} km ({drive_time}) | ₹{p.get('price_per_acre_lakhs')} L/Acre",
             icon=folium.Icon(color=marker_color, icon=icon_name, prefix="fa")
         ).add_to(marker_cluster)
+
+    # 4. Optional Selected Pin (Clicked on Map or Searched)
+    if selected_pin:
+        s_lat = float(selected_pin.get("lat", origin_lat))
+        s_lng = float(selected_pin.get("lng", origin_lng))
+        s_title = selected_pin.get("title", "Selected Map Location")
+        s_desc = selected_pin.get("description", "Complete the form below to add this parcel.")
+
+        sel_popup = f"""
+        <div style="font-family: Arial, sans-serif; font-size: 12px; color: #0F172A; min-width: 220px;">
+            <div style="background: #F59E0B; color: #78350F; padding: 6px 8px; border-radius: 4px; font-weight: bold; margin-bottom: 4px;">
+                📍 {s_title}
+            </div>
+            <b>Coordinates:</b> {s_lat:.5f}, {s_lng:.5f}<br>
+            <div style="color: #475569; font-size: 11px; margin-top: 4px;">
+                {s_desc}
+            </div>
+        </div>
+        """
+
+        folium.Marker(
+            location=[s_lat, s_lng],
+            popup=folium.Popup(sel_popup, max_width=280),
+            tooltip=f"📍 {s_title} ({s_lat:.4f}, {s_lng:.4f})",
+            icon=folium.Icon(color="red", icon="crosshairs", prefix="fa")
+        ).add_to(m)
+
+        # Draw a small circle around the clicked location
+        folium.Circle(
+            location=[s_lat, s_lng],
+            radius=600,
+            color="#EF4444",
+            weight=2,
+            fill=True,
+            fill_color="#F87171",
+            fill_opacity=0.25
+        ).add_to(m)
 
     folium.LayerControl(position="topright").add_to(m)
     return m

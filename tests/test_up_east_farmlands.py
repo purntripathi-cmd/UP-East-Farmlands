@@ -66,6 +66,7 @@ from utils.farmland_view import (
     _extract_crops_telemetry
 )
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
+from utils.farmland_repository import create_and_add_farmland, load_all_parcels, save_all_parcels
 
 
 @pytest.fixture
@@ -286,3 +287,43 @@ def test_master_dataset_integrity():
         assert p.get("name")
         assert p.get("published_news_url")
         assert p.get("notice_or_legal_type")
+
+
+# ============================================================
+# 10. MAP DISCOVERY & DYNAMIC PROPERTY ADDITION TEST
+# ============================================================
+def test_map_discovery_and_add_farmland():
+    initial_parcels = load_all_parcels()
+    count_before = len(initial_parcels)
+
+    test_lat, test_lng = 25.4215, 82.8874
+    success, msg, new_farm = create_and_add_farmland(
+        name="Automated Test Babatpur Agri Orchard",
+        district="Varanasi",
+        location="Babatpur Airport Road, Varanasi",
+        lat=test_lat,
+        lng=test_lng,
+        size_acres=4.5,
+        price_per_acre_lakhs=32.0,
+        contact_person="Ramesh Chandra",
+        contact_phone="+91 94150 99887",
+        seller_category="Direct Landowner / Farmer",
+        khasra_number="Khasra 219/4"
+    )
+
+    assert success is True
+    assert new_farm is not None
+    assert new_farm["size_acres"] == 4.5
+    assert new_farm["unit_meta"]["pakka_bigha"] == 7.2
+    assert "critique_ai" in new_farm
+    assert new_farm["critique_ai"]["critique_risk_score"] > 0
+
+    # Verify parcel in master dataset
+    after_parcels = load_all_parcels()
+    assert len(after_parcels) == count_before + 1
+
+    # Clean up test parcel
+    cleaned = [p for p in after_parcels if p.get("id") != new_farm["id"]]
+    save_all_parcels(cleaned)
+    assert len(load_all_parcels()) == count_before
+
