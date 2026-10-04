@@ -667,6 +667,16 @@ if "active_center_name" not in st.session_state:
 if "manual_center_override" not in st.session_state:
     st.session_state["manual_center_override"] = False
 
+if "micro_market_select" not in st.session_state:
+    st.session_state["micro_market_select"] = "All Regions"
+
+if "sb_map_sno_locator" not in st.session_state:
+    st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+
+if "sb_map_fav_quick_select" not in st.session_state:
+    st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
+
+
 # AI Agent & Help Chat Session State
 if "chat_messages" not in st.session_state:
     st.session_state["chat_messages"] = [
@@ -877,6 +887,16 @@ def sync_district_from_tab1():
 def sync_center_from_sidebar():
     st.session_state["active_center_name"] = st.session_state["sb_center_choice"]
     st.session_state["manual_center_override"] = True
+
+def reset_to_default_location_callback():
+    st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+    st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
+    st.session_state["micro_market_select"] = "All Regions"
+    st.session_state["map_clicked_coord"] = None
+
+def clear_pinned_coord_callback():
+    st.session_state["map_clicked_coord"] = None
+
 
 # -------------------------------------------------------------
 # SIDEBAR FILTERS & CONTROLS (Always Visible, 375px Wide)
@@ -1417,12 +1437,13 @@ with view_tabs[0]:
 
     with loc_c3:
         st.write("")
-        if st.button("📍 Default Location", key="btn_reset_map_default_loc", use_container_width=True, help="Reset map view, center, and zoom back to default benchmark zero-point location"):
-            st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
-            st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
-            st.session_state["micro_market_select"] = "All Regions"
-            st.session_state["map_clicked_coord"] = None
-            st.rerun()
+        st.button(
+            "📍 Default Location",
+            key="btn_reset_map_default_loc",
+            on_click=reset_to_default_location_callback,
+            use_container_width=True,
+            help="Reset map view, center, and zoom back to default benchmark zero-point location"
+        )
 
     if sel_map_fav_quick != "🌐 Show All on Map" and not map_parcels:
         st.warning(f"⚠️ No properties found for '{sel_map_fav_quick}' with current district/search filters.")
@@ -1462,16 +1483,20 @@ with view_tabs[0]:
         - 📍 **Red Target:** Pinned / Clicked Location
         """)
         show_concentric = st.checkbox("Overlay Concentric Buffer Rings", value=True)
-        if st.button("📍 Default Location", key="btn_legend_default_loc", use_container_width=True, help="Reset map view, center, and zoom back to default benchmark location"):
-            st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
-            st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
-            st.session_state["micro_market_select"] = "All Regions"
-            st.session_state["map_clicked_coord"] = None
-            st.rerun()
+        st.button(
+            "📍 Default Location",
+            key="btn_legend_default_loc",
+            on_click=reset_to_default_location_callback,
+            use_container_width=True,
+            help="Reset map view, center, and zoom back to default benchmark location"
+        )
         if st.session_state.get("map_clicked_coord"):
-            if st.button("❌ Clear Pinned Map Coordinate", use_container_width=True):
-                st.session_state["map_clicked_coord"] = None
-                st.rerun()
+            st.button(
+                "❌ Clear Pinned Map Coordinate",
+                key="btn_legend_clear_pin",
+                on_click=clear_pinned_coord_callback,
+                use_container_width=True
+            )
 
     with map_c1:
         selected_pin_obj = None

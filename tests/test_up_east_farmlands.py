@@ -1145,6 +1145,13 @@ def test_google_maps_terrain_default_click_zoom_and_default_location_button(samp
     # Default zoom is stable at 10 (does not randomly change to 9 or 11 on search)
     assert 'map_zoom = 10' in code
 
+    # Callbacks must be wired with on_click to prevent StreamlitWidgetAlreadyInstantiatedError
+    assert 'def reset_to_default_location_callback' in code
+    assert 'on_click=reset_to_default_location_callback' in code
+    assert 'def clear_pinned_coord_callback' in code
+    assert 'on_click=clear_pinned_coord_callback' in code
+
+
 
 
 
