@@ -19,6 +19,7 @@ Features:
 
 import os
 import json
+import html
 import streamlit as st
 import pandas as pd
 from streamlit_folium import st_folium
@@ -565,6 +566,36 @@ st.markdown("""
         text-align: left !important;
         padding: 3px 5px !important;
     }
+
+    /* AI Agent Chat Modal Styling: High-contrast, distinctive user vs AI coloring */
+    div[data-testid="stDialog"] div[data-testid="stChatMessage"] {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 4px 0 !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* User Question Box: Soft institutional blue with bold blue left accent */
+    .ai-chat-bubble-user {
+        background-color: #EFF6FF !important;
+        border: 1.5px solid #BFDBFE !important;
+        border-left: 5px solid #2563EB !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        margin: 4px 0 10px 0 !important;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08) !important;
+    }
+
+    /* AI Response Box: Soft mint/slate with bold emerald left accent */
+    .ai-chat-bubble-assistant {
+        background-color: #F8FAFC !important;
+        border: 1.5px solid #CBD5E1 !important;
+        border-left: 5px solid #10B981 !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin: 4px 0 12px 0 !important;
+        box-shadow: 0 1px 4px rgba(16, 185, 129, 0.08) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -653,6 +684,9 @@ if "chat_messages" not in st.session_state:
         }
     ]
 
+if "show_ai_agent_modal" not in st.session_state:
+    st.session_state["show_ai_agent_modal"] = False
+
 if "user_github_token" not in st.session_state:
     st.session_state["user_github_token"] = ""
 
@@ -663,7 +697,12 @@ if "model_probe_feedback" not in st.session_state:
     st.session_state["model_probe_feedback"] = ""
 
 
-@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent", width="large")
+def on_close_ai_dialog_callback(*args, **kwargs):
+    """Callback when dialog is dismissed by clicking X, ESC, or outside."""
+    st.session_state["show_ai_agent_modal"] = False
+
+
+@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent", width="large", on_dismiss=on_close_ai_dialog_callback)
 def show_farmland_ai_agent_dialog(parcels, center_name):
     """
     Interactive Farmland Due Diligence Agent Chat Modal (Accessible from all tabs).
@@ -674,7 +713,7 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
     active_tok = manual_tok or server_tok
     cur_m = st.session_state.get("active_github_model", "gpt-4o-mini")
 
-    d_col1, d_col2 = st.columns([3, 1.2])
+    d_col1, d_col2, d_col3 = st.columns([2.8, 1.2, 1.0])
     with d_col1:
         if active_tok:
             tier_label = "Free Public Access Enabled" if (server_tok and not manual_tok) else "Custom Token Active"
@@ -686,6 +725,11 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
             st.session_state["chat_messages"] = [
                 {"role": "assistant", "content": "Chat history cleared. How can I assist you with UP East farmlands today?"}
             ]
+            st.session_state["show_ai_agent_modal"] = True
+            st.rerun()
+    with d_col3:
+        if st.button("✖ Close", key="btn_dlg_close_modal", use_container_width=True, help="Close AI Agent window"):
+            st.session_state["show_ai_agent_modal"] = False
             st.rerun()
 
     expander_title = "⚙️ Advanced AI Model Settings (Optional)" if server_tok else "⚙️ GitHub Token & Auto-Model Check (Free Tier)"
@@ -723,6 +767,7 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
                             st.session_state["model_probe_feedback"] = f"⚠️ {msg}"
                 else:
                     st.session_state["model_probe_feedback"] = "Please enter a valid GitHub token first."
+                st.session_state["show_ai_agent_modal"] = True
                 st.rerun()
 
         if st.session_state.get("model_probe_feedback"):
@@ -762,16 +807,43 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
             quick_query = "What are the groundwater TDS thresholds for farmlands in Varanasi and which properties have pristine water?"
 
     st.markdown("---")
-    chat_container = st.container(height=350)
+    chat_container = st.container(height=380)
     with chat_container:
         for msg in st.session_state["chat_messages"]:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+            if msg["role"] == "user":
+                with st.chat_message("user", avatar="👤"):
+                    st.markdown(
+                        f"""
+                        <div class="ai-chat-bubble-user">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-weight: 700; color: #1E40AF; font-size: 13px;">👤 Your Question (Investor Query)</span>
+                                <span style="background-color: #DBEAFE; color: #1E40AF; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">You</span>
+                            </div>
+                            <div style="color: #0F172A; font-size: 14.5px; font-weight: 500; line-height: 1.5;">
+                                {html.escape(msg['content'])}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+            else:
+                with st.chat_message("assistant", avatar="🌾"):
+                    st.markdown(
+                        """
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1.5px solid #D1FAE5;">
+                            <span style="font-weight: 700; color: #065F46; font-size: 13.5px;">🌾 UP East Farmland AI Advisor & Legal Agent</span>
+                            <span style="background-color: #D1FAE5; color: #065F46; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">AI Legal Audit</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    st.markdown(msg["content"])
 
     user_input = st.chat_input("Ask about land laws, specific properties, water TDS, or circle rates...", key="dlg_chat_input")
     effective_query = quick_query or user_input
 
     if effective_query:
+        st.session_state["show_ai_agent_modal"] = True
         st.session_state["chat_messages"].append({"role": "user", "content": effective_query})
         with st.spinner("AI Agent analyzing legal land registry & agronomic telemetry..."):
             res = query_farmland_agent(
@@ -783,6 +855,7 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
                 preferred_model=st.session_state.get("active_github_model")
             )
             st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
+        st.session_state["show_ai_agent_modal"] = True
         st.rerun()
 
 
@@ -1019,7 +1092,8 @@ else:
     st.sidebar.info("ℹ️ Built-in Legal & Farmland AI Engine (Free)")
 
 if st.sidebar.button("💬 Open AI Agent Chat", key="btn_sidebar_ai_agent_help", use_container_width=True, help="Chat live with Farmland Due Diligence Agent"):
-    show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
+    st.session_state["show_ai_agent_modal"] = True
+    st.rerun()
 
 # 11. CPU, RAM & Hosted Environment Telemetry Widget
 st.sidebar.markdown("---")
@@ -1103,6 +1177,12 @@ for p in all_parcels:
 filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km", 999.0))
 
 # -------------------------------------------------------------
+# AI AGENT & HELP DIALOG LAUNCHER (PERMANENT MULTI-TAB MODAL)
+# -------------------------------------------------------------
+if st.session_state.get("show_ai_agent_modal", False):
+    show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
+
+# -------------------------------------------------------------
 # MAIN APP HEADER & KPIS
 # -------------------------------------------------------------
 hdr_c1, hdr_c2 = st.columns([3.8, 1.4])
@@ -1114,7 +1194,8 @@ with hdr_c1:
 with hdr_c2:
     st.write("")
     if st.button("💬 🤖 Help / Ask AI Agent", key="btn_top_header_ai_help", use_container_width=True, type="primary", help="Chat live with the Farmland Due Diligence Agent"):
-        show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
+        st.session_state["show_ai_agent_modal"] = True
+        st.rerun()
 
 # Top KPI Metric Cards (Responsive on Mobile)
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
@@ -1914,16 +1995,19 @@ with view_tabs[1]:
                 "role": "user",
                 "content": f"Please perform an in-depth legal due diligence and agronomic review for Property #{master_sno_map.get(active_pid, selected_farm_idx + 1)}: '{active_farm['name']}' in {active_farm.get('regional_district')}. Review Section 98 SC/ST status ({active_farm.get('caste_category')}), water TDS ({active_farm.get('water_tds_ppm')} ppm), soil ({active_farm.get('soil_type')}), road access ({active_farm.get('road_access_width_ft')} ft), and price (₹{active_farm.get('price_per_acre_lakhs')} L/Acre)."
             })
-            res = query_farmland_agent(
-                user_query=st.session_state["chat_messages"][-1]["content"],
-                chat_history=st.session_state["chat_messages"][:-1],
-                all_parcels=all_parcels,
-                active_center_name=active_lm["name"],
-                token=(st.session_state.get("user_github_token") or "").strip() or get_available_github_token(),
-                preferred_model=st.session_state.get("active_github_model")
-            )
-            st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
-            show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
+            token_for_agent = (st.session_state.get("user_github_token") or "").strip() or get_available_github_token()
+            with st.spinner("AI Agent analyzing parcel legal dossier..."):
+                res = query_farmland_agent(
+                    user_query=st.session_state["chat_messages"][-1]["content"],
+                    chat_history=st.session_state["chat_messages"][:-1],
+                    all_parcels=all_parcels,
+                    active_center_name=active_lm["name"],
+                    token=token_for_agent,
+                    preferred_model=st.session_state.get("active_github_model")
+                )
+                st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
+            st.session_state["show_ai_agent_modal"] = True
+            st.rerun()
 
         # 4. Direct Seller Contact Card
         render_html_block(render_seller_contact_card_html(active_farm))

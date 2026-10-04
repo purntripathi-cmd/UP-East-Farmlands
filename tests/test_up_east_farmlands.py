@@ -1057,14 +1057,55 @@ def test_help_agent_button_visibility_on_all_tabs_and_dialog():
     assert 'btn_sidebar_ai_agent_help' in code
     assert 'Open AI Agent Chat' in code
 
-    # Dialog defined
-    assert '@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent", width="large")' in code
+    # Dialog defined with dismiss callback and persistence flag
+    assert '@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent"' in code
     assert 'show_farmland_ai_agent_dialog' in code
+    assert 'show_ai_agent_modal' in code
+    assert 'on_close_ai_dialog_callback' in code
+    assert 'btn_dlg_close_modal' in code
+
+    # Distinct color card styling for User Question vs AI Response
+    assert 'ai-chat-bubble-user' in code
+    assert 'ai-chat-bubble-assistant' in code
+    assert '#EFF6FF' in code  # Soft blue user bubble
+    assert '#10B981' in code  # Emerald AI response accent border
 
     # Model probe action wired in dialog
     assert 'probe_best_github_model' in code
     assert 'dlg_gh_token_input' in code
     assert 'Check & Select Best Model' in code
+
+
+def test_ai_agent_modal_persistence_and_distinct_color_bubbles():
+    """Verifies that the dialog modal uses session_state persistence, preserves chat history, and differentiates colors."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Modal persistence logic
+    assert 'st.session_state["show_ai_agent_modal"] = True' in code
+    assert 'if st.session_state.get("show_ai_agent_modal", False):' in code
+    assert 'show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])' in code
+
+    # Dismiss callback resets flag
+    assert 'def on_close_ai_dialog_callback' in code
+    assert 'st.session_state["show_ai_agent_modal"] = False' in code
+
+    # Explicit Close button
+    assert 'btn_dlg_close_modal' in code
+    assert '✖ Close' in code
+
+    # Color difference checks:
+    # User Question: Soft blue background #EFF6FF, blue accent border #2563EB, Investor Query header
+    assert '👤 Your Question (Investor Query)' in code
+    assert '#2563EB' in code
+    assert '#EFF6FF' in code
+
+    # AI Response: Soft card with emerald accent border #10B981, AI Legal Audit badge
+    assert '🌾 UP East Farmland AI Advisor & Legal Agent' in code
+    assert 'AI Legal Audit' in code
+    assert '#10B981' in code
+
 
 
 
