@@ -1325,8 +1325,8 @@ with view_tabs[0]:
             key="micro_market_select"
         )
 
-    st.markdown(f"### 🗺️ Google Satellite & Hybrid Map with Concentric Buffers")
-    st.caption(f"Concentric buffer rings (20 km, 40 km, 60 km, 80 km, 100 km) radiating from **{active_lm['name']}**. Search any area, or click anywhere on the map to add a new farmland property!")
+    st.markdown(f"### 🗺️ Google Maps Terrain & Satellite Intelligence with Concentric Buffers")
+    st.caption(f"Default view: **Google Maps Terrain** (switchable to Satellite/Hybrid/Roadmap via top-right layer control). Concentric buffer rings (20-100 km) radiating from **{active_lm['name']}**.")
 
     # Micro-market coordinate lookup
     micro_market_coords = {
@@ -1342,11 +1342,12 @@ with view_tabs[0]:
     display_parcels = list(filtered_parcels)
     search_q = map_search_input.strip().lower()
 
+    # Stable default center and zoom (does not jump on search/filter changes)
     center_lat = origin_lat
     center_lng = origin_lng
-    map_zoom = 9 if len(display_parcels) > 10 else 10
+    map_zoom = 10
 
-    if micro_market_jump in micro_market_coords:
+    if micro_market_jump in micro_market_coords and micro_market_jump != "All Regions":
         mm_lat, mm_lng, mm_zoom = micro_market_coords[micro_market_jump]
         center_lat, center_lng, map_zoom = mm_lat, mm_lng, mm_zoom
 
@@ -1360,10 +1361,6 @@ with view_tabs[0]:
             or search_q in p.get("published_news_title", "").lower()
         ]
         st.info(f"🔍 **Search Filter Active:** Found **{len(display_parcels)}** properties matching '{map_search_input}'.")
-        if display_parcels:
-            center_lat = float(display_parcels[0].get("lat", origin_lat))
-            center_lng = float(display_parcels[0].get("lng", origin_lng))
-            map_zoom = 11
 
     # Assign persistent serial numbers matching Tab 1 table row order
     for idx, p in enumerate(display_parcels):
@@ -1380,7 +1377,7 @@ with view_tabs[0]:
         map_parcels = [p for p in map_parcels if is_favorite(str(p.get("id")), username=u_target)]
 
     # S.No. & Multi-User Favorites Google Map Locator Bar
-    loc_c1, loc_c2, loc_c3 = st.columns([2.5, 1.3, 1.0])
+    loc_c1, loc_c2, loc_c3 = st.columns([2.3, 1.3, 1.4])
     with loc_c1:
         sno_options = ["🗺️ Overview (All Farmland Parcels)"]
         for p in map_parcels:
@@ -1420,19 +1417,15 @@ with view_tabs[0]:
 
     with loc_c3:
         st.write("")
-        if selected_sno_label != "🗺️ Overview (All Farmland Parcels)" or sel_map_fav_quick != "🌐 Show All on Map":
-            if st.button("❌ Reset Map", key="btn_reset_map_sno", use_container_width=True):
-                st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
-                st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
-                st.rerun()
+        if st.button("📍 Default Location", key="btn_reset_map_default_loc", use_container_width=True, help="Reset map view, center, and zoom back to default benchmark zero-point location"):
+            st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+            st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
+            st.session_state["micro_market_select"] = "All Regions"
+            st.session_state["map_clicked_coord"] = None
+            st.rerun()
 
-    if sel_map_fav_quick != "🌐 Show All on Map":
-        if map_parcels:
-            center_lat = float(map_parcels[0]["lat"])
-            center_lng = float(map_parcels[0]["lng"])
-            map_zoom = 11
-        else:
-            st.warning(f"⚠️ No properties found for '{sel_map_fav_quick}' with current district/search filters.")
+    if sel_map_fav_quick != "🌐 Show All on Map" and not map_parcels:
+        st.warning(f"⚠️ No properties found for '{sel_map_fav_quick}' with current district/search filters.")
 
     focused_sno = None
     if selected_sno_label != "🗺️ Overview (All Farmland Parcels)":
@@ -1447,6 +1440,11 @@ with view_tabs[0]:
                 map_zoom = 15
         except Exception:
             focused_sno = None
+    elif st.session_state.get("map_clicked_coord"):
+        c_lat, c_lng = st.session_state["map_clicked_coord"]
+        center_lat = c_lat
+        center_lng = c_lng
+        map_zoom = 13
 
     # Map Layout & Legend Controls
     map_c1, map_c2 = st.columns([3, 1])
@@ -1464,6 +1462,12 @@ with view_tabs[0]:
         - 📍 **Red Target:** Pinned / Clicked Location
         """)
         show_concentric = st.checkbox("Overlay Concentric Buffer Rings", value=True)
+        if st.button("📍 Default Location", key="btn_legend_default_loc", use_container_width=True, help="Reset map view, center, and zoom back to default benchmark location"):
+            st.session_state["sb_map_sno_locator"] = "🗺️ Overview (All Farmland Parcels)"
+            st.session_state["sb_map_fav_quick_select"] = "🌐 Show All on Map"
+            st.session_state["micro_market_select"] = "All Regions"
+            st.session_state["map_clicked_coord"] = None
+            st.rerun()
         if st.session_state.get("map_clicked_coord"):
             if st.button("❌ Clear Pinned Map Coordinate", use_container_width=True):
                 st.session_state["map_clicked_coord"] = None

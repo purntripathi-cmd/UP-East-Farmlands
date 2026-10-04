@@ -1107,6 +1107,46 @@ def test_ai_agent_modal_persistence_and_distinct_color_bubbles():
     assert '#10B981' in code
 
 
+def test_google_maps_terrain_default_click_zoom_and_default_location_button(sample_parcel):
+    """Verifies that Google Maps Terrain is the default layer, scroll-zoom is locked until click, and default location buttons exist."""
+    # 1. Test create_google_farmland_map layer configuration
+    m = create_google_farmland_map(
+        parcels=[sample_parcel],
+        origin_lat=DEFAULT_ORIGIN_LAT,
+        origin_lng=DEFAULT_ORIGIN_LNG,
+        origin_name=DEFAULT_ORIGIN_NAME
+    )
+    map_html = m.get_root().render()
+
+    # Terrain must be present and configured
+    assert "Google Maps Terrain" in map_html
+    assert "mt1.google.com/vt/lyrs=p" in map_html
+
+    # scrollWheelZoom must be disabled on init
+    assert '"scrollWheelZoom": false' in map_html
+
+    # Click-to-zoom controller must attach click and mouseout handlers
+    assert "scrollWheelZoom.enable()" in map_html
+    assert "scrollWheelZoom.disable()" in map_html
+
+    # 2. Test app.py wiring for Default Location buttons and stable zoom
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Default location buttons visible above map and on sidebar
+    assert 'btn_reset_map_default_loc' in code
+    assert 'btn_legend_default_loc' in code
+    assert '📍 Default Location' in code
+
+    # Map heading specifies Google Maps Terrain as default
+    assert 'Google Maps Terrain' in code
+
+    # Default zoom is stable at 10 (does not randomly change to 9 or 11 on search)
+    assert 'map_zoom = 10' in code
+
+
+
 
 
 

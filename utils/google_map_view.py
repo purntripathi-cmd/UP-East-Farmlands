@@ -6,6 +6,7 @@ plots individual farmland parcels with telemetry popups,
 and supports dynamic marker placement for newly clicked or searched coordinates.
 """
 
+import jinja2
 import folium
 from folium import plugins
 from typing import List, Dict, Any, Set, Optional, Tuple
@@ -18,27 +19,49 @@ from utils.geo_routing import (
 
 # Official Google Maps Web Tile Endpoints
 GOOGLE_TILES = {
+    "terrain": {
+        "url": "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+        "name": "Google Maps Terrain",
+        "attr": "Google Maps Physical Terrain"
+    },
     "hybrid": {
         "url": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
         "name": "Google Maps Satellite (Hybrid)",
         "attr": "Google Maps Satellite Imagery with Road Overlay"
-    },
-    "satellite": {
-        "url": "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-        "name": "Google Maps Satellite (Pure)",
-        "attr": "Google Maps Pure Satellite Imagery"
     },
     "roadmap": {
         "url": "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
         "name": "Google Maps Streets / Roadmap",
         "attr": "Google Maps Street Map"
     },
-    "terrain": {
-        "url": "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
-        "name": "Google Maps Terrain",
-        "attr": "Google Maps Physical Terrain"
+    "satellite": {
+        "url": "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        "name": "Google Maps Satellite (Pure)",
+        "attr": "Google Maps Pure Satellite Imagery"
     }
 }
+
+
+class MapClickZoomController(folium.MacroElement):
+    """
+    Prevents the map from capturing page scrolls and zooming unexpectedly.
+    Enables scroll wheel zoom only when the user explicitly clicks inside the map,
+    and disables it again when the mouse moves out.
+    """
+    def __init__(self):
+        super().__init__()
+        self._template = jinja2.Template("""
+        {% macro script(this, kwargs) %}
+            {{ this._parent.get_name() }}.scrollWheelZoom.disable();
+            {{ this._parent.get_name() }}.on('click', function() {
+                {{ this._parent.get_name() }}.scrollWheelZoom.enable();
+            });
+            {{ this._parent.get_name() }}.on('mouseout', function() {
+                {{ this._parent.get_name() }}.scrollWheelZoom.disable();
+            });
+        {% endmacro %}
+        """)
+
 
 # Concentric Ring Definitions (Radius in metres, color, label)
 CONCENTRIC_RINGS = [
@@ -65,7 +88,7 @@ def create_google_farmland_map(
     favorites_by_parcel: Optional[Dict[str, List[str]]] = None
 ) -> folium.Map:
     """
-    Constructs an interactive Folium Map using Google Maps satellite/hybrid tiles,
+    Constructs an interactive Folium Map using Google Maps Terrain as default,
     with an active landmark origin marker, farmland estate pins,
     and optional user-clicked / searched target pin.
     """
@@ -73,22 +96,36 @@ def create_google_farmland_map(
     map_center_lat = center_lat if center_lat is not None else origin_lat
     map_center_lng = center_lng if center_lng is not None else origin_lng
 
-    # Initialize Folium Map with mobile-friendly gestures
+    # Initialize Folium Map with mobile-friendly gestures; scrollWheelZoom is disabled until map click
     m = folium.Map(
         location=[map_center_lat, map_center_lng],
         zoom_start=zoom_start,
         tiles=None,
         control_scale=True,
-        prefer_canvas=True
+        prefer_canvas=True,
+        scrollWheelZoom=False
     )
 
-    # Add Google Maps Tile Layers
+    # Attach click-to-zoom controller: map only zooms with wheel if clicked
+    MapClickZoomController().add_to(m)
+
+    # Add Google Maps Tile Layers with Terrain as the DEFAULT active layer
+    folium.TileLayer(
+        tiles=GOOGLE_TILES["terrain"]["url"],
+        attr=GOOGLE_TILES["terrain"]["attr"],
+        name=GOOGLE_TILES["terrain"]["name"],
+        overlay=False,
+        control=True,
+        show=True
+    ).add_to(m)
+
     folium.TileLayer(
         tiles=GOOGLE_TILES["hybrid"]["url"],
         attr=GOOGLE_TILES["hybrid"]["attr"],
         name=GOOGLE_TILES["hybrid"]["name"],
         overlay=False,
-        control=True
+        control=True,
+        show=False
     ).add_to(m)
 
     folium.TileLayer(
@@ -96,15 +133,8 @@ def create_google_farmland_map(
         attr=GOOGLE_TILES["roadmap"]["attr"],
         name=GOOGLE_TILES["roadmap"]["name"],
         overlay=False,
-        control=True
-    ).add_to(m)
-
-    folium.TileLayer(
-        tiles=GOOGLE_TILES["terrain"]["url"],
-        attr=GOOGLE_TILES["terrain"]["attr"],
-        name=GOOGLE_TILES["terrain"]["name"],
-        overlay=False,
-        control=True
+        control=True,
+        show=False
     ).add_to(m)
 
     folium.TileLayer(
@@ -112,7 +142,8 @@ def create_google_farmland_map(
         attr=GOOGLE_TILES["satellite"]["attr"],
         name=GOOGLE_TILES["satellite"]["name"],
         overlay=False,
-        control=True
+        control=True,
+        show=False
     ).add_to(m)
 
     # 1. Plot Origin Benchmark Landmark (Kacheri Varanasi / Selected Origin)
