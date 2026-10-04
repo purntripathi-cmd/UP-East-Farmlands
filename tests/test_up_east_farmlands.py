@@ -973,4 +973,99 @@ def test_tab1_ledger_fav_column_and_telemetry_sidebar_placement():
     assert 'master_sno_map.get(str(p.get("id")), idx + 1)' in app_code
 
 
+def test_github_ai_agent_module_and_rule_fallback():
+    """Verifies that GitHub AI agent initializes, falls back safely without a token, and answers domain queries."""
+    from utils.github_ai_agent import (
+        query_farmland_agent,
+        probe_best_github_model,
+        get_available_github_token,
+        generate_local_rule_agent_response,
+        CANDIDATE_GITHUB_MODELS
+    )
+
+    # 1. Candidate models are prioritized properly
+    assert "gpt-4o-mini" in CANDIDATE_GITHUB_MODELS
+    assert "Meta-Llama-3.1-70B-Instruct" in CANDIDATE_GITHUB_MODELS
+
+    # 2. Probe with empty or dummy token
+    m, msg = probe_best_github_model("")
+    assert m is None
+    assert "No token provided" in msg
+
+    # 3. Test knowledge responses
+    mock_parcels = [
+        {
+            "id": "p1",
+            "name": "Kashi Polyhouse Farmland",
+            "regional_district": "Varanasi",
+            "size_acres": 5.0,
+            "price_per_acre_lakhs": 45.0,
+            "total_price_cr": 2.25,
+            "is_sc_st_land": True,
+            "caste_category": "SC (Section 98 Restricted)",
+            "water_tds_ppm": 220,
+            "due_diligence_score": 88,
+            "critique_ai_score": 60,
+            "soil_type": "Ganga Alluvial Loam",
+            "road_access_width_ft": 30
+        },
+        {
+            "id": "p2",
+            "name": "Chandauli Agro Park",
+            "regional_district": "Chandauli",
+            "size_acres": 10.0,
+            "price_per_acre_lakhs": 25.0,
+            "total_price_cr": 2.5,
+            "is_sc_st_land": False,
+            "caste_category": "General",
+            "water_tds_ppm": 280,
+            "due_diligence_score": 92,
+            "critique_ai_score": 90,
+            "soil_type": "Alluvial Clay Loam",
+            "road_access_width_ft": 40
+        }
+    ]
+
+    # Query: SC/ST
+    res_sc = query_farmland_agent("What are the rules for SC ST land under Section 98?", [], mock_parcels, "Varanasi Kacheri")
+    assert "Section 98" in res_sc["response"]
+    assert "District Collector" in res_sc["response"] or "DM" in res_sc["response"]
+    assert res_sc["is_live_llm"] is False
+
+    # Query: Bigha conversion
+    res_bigha = query_farmland_agent("How many Bigha in an Acre in Purvanchal?", [], mock_parcels, "Varanasi Kacheri")
+    assert "1.60" in res_bigha["response"]
+    assert "Pakka Bigha" in res_bigha["response"]
+
+    # Query: Water TDS
+    res_water = query_farmland_agent("What is water TDS salinity threshold?", [], mock_parcels, "Varanasi Kacheri")
+    assert "TDS" in res_water["response"]
+    assert "300 ppm" in res_water["response"]
+
+
+def test_help_agent_button_visibility_on_all_tabs_and_dialog():
+    """Verifies that the Help / AI Agent button is wired in top header, sidebar, and Tab 2, and dialog is defined."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        code = f.read()
+
+    # Help button in top header (visible across all tabs)
+    assert 'btn_top_header_ai_help' in code
+    assert 'Help / Ask AI Agent' in code
+
+    # Help button in sidebar (permanently visible on all tabs)
+    assert 'btn_sidebar_ai_agent_help' in code
+    assert 'Open AI Agent Chat' in code
+
+    # Dialog defined
+    assert '@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent", width="large")' in code
+    assert 'show_farmland_ai_agent_dialog' in code
+
+    # Model probe action wired in dialog
+    assert 'probe_best_github_model' in code
+    assert 'dlg_gh_token_input' in code
+    assert 'Check & Select Best Model' in code
+
+
+
 

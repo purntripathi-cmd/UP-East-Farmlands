@@ -80,6 +80,12 @@ from utils.farmland_view import (
 )
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
 from utils.farmland_repository import create_and_add_farmland, load_all_parcels
+from utils.github_ai_agent import (
+    query_farmland_agent,
+    probe_best_github_model,
+    get_available_github_token,
+    CANDIDATE_GITHUB_MODELS
+)
 
 # Page Configuration: Sidebar Visible Always
 st.set_page_config(
@@ -629,6 +635,145 @@ if "active_center_name" not in st.session_state:
 if "manual_center_override" not in st.session_state:
     st.session_state["manual_center_override"] = False
 
+# AI Agent & Help Chat Session State
+if "chat_messages" not in st.session_state:
+    st.session_state["chat_messages"] = [
+        {
+            "role": "assistant",
+            "content": (
+                "👋 **Namaste! I am your UP East Farmland & Legal Due Diligence Agent.**\n\n"
+                "I am equipped to advise you on:\n"
+                "- **SC/ST Land Protections** under Section 98 UP Revenue Code 2006 (DM/Collector permission mandates)\n"
+                "- **Purvanchal Land Units** (`1 Acre = 1.60 Pakka Bigha` / 20 Biswa)\n"
+                "- **Groundwater Quality & Salinity** (TDS < 300 ppm pristine zones vs saline patches)\n"
+                "- **Top Due-Diligence Farmlands & Circle Rate Arbitrage** across Varanasi, Mirzapur, Ghazipur, Chandauli, Jaunpur, and Bhadohi.\n\n"
+                "Ask any question or click a quick prompt below!"
+            )
+        }
+    ]
+
+if "user_github_token" not in st.session_state:
+    st.session_state["user_github_token"] = get_available_github_token() or ""
+
+if "active_github_model" not in st.session_state:
+    st.session_state["active_github_model"] = "gpt-4o-mini"
+
+if "model_probe_feedback" not in st.session_state:
+    st.session_state["model_probe_feedback"] = ""
+
+
+@st.dialog("🌾 UP East Farmlands AI Advisor & Legal Agent", width="large")
+def show_farmland_ai_agent_dialog(parcels, center_name):
+    """
+    Interactive Farmland Due Diligence Agent Chat Modal (Accessible from all tabs).
+    Connects to GitHub Models (GPT-4o, Llama 3.1, etc.) or uses built-in legal engine.
+    """
+    cur_tok = (st.session_state.get("user_github_token") or "").strip() or get_available_github_token()
+    cur_m = st.session_state.get("active_github_model", "gpt-4o-mini")
+
+    d_col1, d_col2 = st.columns([3, 1.2])
+    with d_col1:
+        if cur_tok:
+            st.success(f"🟢 **Live GitHub Models Active:** `{cur_m}` (Free Tier)")
+        else:
+            st.info("ℹ️ **Built-in Legal & Farmland AI Engine Active** (100% Free, No Token Required)")
+    with d_col2:
+        if st.button("🗑️ Clear Chat", key="btn_dlg_clear_chat", use_container_width=True):
+            st.session_state["chat_messages"] = [
+                {"role": "assistant", "content": "Chat history cleared. How can I assist you with UP East farmlands today?"}
+            ]
+            st.rerun()
+
+    with st.expander("⚙️ GitHub Token & Auto-Model Check (Free Tier)", expanded=not bool(cur_tok)):
+        st.markdown("##### 🔑 Connect Free GitHub Models (GPT-4o / Llama 3.1)")
+        st.caption("Enter a free GitHub Personal Access Token (PAT). The app will automatically test and pick the best available model.")
+
+        inp_col1, inp_col2 = st.columns([2.8, 1.4])
+        with inp_col1:
+            gh_input = st.text_input(
+                "GitHub Personal Access Token (PAT):",
+                value=st.session_state.get("user_github_token", ""),
+                type="password",
+                placeholder="ghp_... or github_pat_...",
+                key="dlg_gh_token_input"
+            )
+        with inp_col2:
+            st.write("")
+            if st.button("🧪 Check & Select Best Model", key="btn_dlg_probe_model", use_container_width=True):
+                st.session_state["user_github_token"] = gh_input.strip()
+                if gh_input.strip():
+                    with st.spinner("Probing GitHub Models (GPT-4o, Llama 3.1, Mistral, Phi-3.5)..."):
+                        best_m, msg = probe_best_github_model(gh_input.strip())
+                        if best_m:
+                            st.session_state["active_github_model"] = best_m
+                            st.session_state["model_probe_feedback"] = f"✅ Best model selected: **{best_m}** ({msg})"
+                        else:
+                            st.session_state["model_probe_feedback"] = f"⚠️ {msg}"
+                else:
+                    st.session_state["model_probe_feedback"] = "Please enter a valid GitHub token first."
+                st.rerun()
+
+        if st.session_state.get("model_probe_feedback"):
+            st.markdown(st.session_state["model_probe_feedback"])
+
+        sel_m = st.selectbox(
+            "Selected AI Model:",
+            options=CANDIDATE_GITHUB_MODELS,
+            index=CANDIDATE_GITHUB_MODELS.index(st.session_state.get("active_github_model", "gpt-4o-mini")) if st.session_state.get("active_github_model") in CANDIDATE_GITHUB_MODELS else 0,
+            key="dlg_sel_model_override"
+        )
+        st.session_state["active_github_model"] = sel_m
+
+        st.markdown("""
+        **How to get a 100% Free GitHub Token in 30 seconds:**
+        1. Open [GitHub Personal Access Tokens](https://github.com/settings/tokens/new) (sign in with your GitHub account).
+        2. Give it a Note (e.g. `UP Farmlands AI`).
+        3. Expiration: 30 or 90 days. No special scopes/checkboxes needed for public models!
+        4. Click **Generate token**, copy, and paste here.
+        *(Note: Token stays securely in your browser session RAM and is never stored on public servers or logged).*
+        """)
+
+    st.markdown("##### ⚡ Quick Due-Diligence Questions:")
+    qp_c1, qp_c2, qp_c3, qp_c4 = st.columns(4)
+    quick_query = None
+    with qp_c1:
+        if st.button("🚨 Section 98 SC/ST Rules", key="btn_qp1", use_container_width=True):
+            quick_query = "Explain Section 98 UP Revenue Code 2006 SC/ST restrictions and legal consequences of buying without DM permission."
+    with qp_c2:
+        if st.button("🏆 Top Due Diligence Farmlands", key="btn_qp2", use_container_width=True):
+            quick_query = "What are the top 3 highest due diligence score properties in the UP East portfolio?"
+    with qp_c3:
+        if st.button("📐 Purvanchal Bigha Conversion", key="btn_qp3", use_container_width=True):
+            quick_query = "How do you convert Acres to Purvanchal Pakka Bigha in Varanasi and UP East?"
+    with qp_c4:
+        if st.button("💧 Water TDS & Salinity Risks", key="btn_qp4", use_container_width=True):
+            quick_query = "What are the groundwater TDS thresholds for farmlands in Varanasi and which properties have pristine water?"
+
+    st.markdown("---")
+    chat_container = st.container(height=350)
+    with chat_container:
+        for msg in st.session_state["chat_messages"]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+    user_input = st.chat_input("Ask about land laws, specific properties, water TDS, or circle rates...", key="dlg_chat_input")
+    effective_query = quick_query or user_input
+
+    if effective_query:
+        st.session_state["chat_messages"].append({"role": "user", "content": effective_query})
+        with st.spinner("AI Agent analyzing legal land registry & agronomic telemetry..."):
+            res = query_farmland_agent(
+                user_query=effective_query,
+                chat_history=st.session_state["chat_messages"][:-1],
+                all_parcels=parcels,
+                active_center_name=center_name,
+                token=st.session_state.get("user_github_token"),
+                preferred_model=st.session_state.get("active_github_model")
+            )
+            st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
+        st.rerun()
+
+
 # -------------------------------------------------------------
 # DISTRICT FILTER CALLBACKS & CITY CENTER AUTO-ANCHORING
 # -------------------------------------------------------------
@@ -851,7 +996,20 @@ if st.sidebar.button("⚡ Run Weekly AI/ML Scan Now", use_container_width=True):
         )
         scanner_status = get_latest_scanner_status()
 
-# 10. CPU, RAM & Hosted Environment Telemetry Widget
+# 10. AI Agent & Help Center (Accessible from all tabs)
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 💬 Farmland AI Agent & Help")
+token_avail = bool(get_available_github_token() or st.session_state.get("user_github_token"))
+if token_avail:
+    active_m = st.session_state.get("active_github_model", "gpt-4o-mini")
+    st.sidebar.success(f"🟢 GitHub Models: **{active_m}**")
+else:
+    st.sidebar.info("ℹ️ Built-in Legal & Farmland AI Engine (Free)")
+
+if st.sidebar.button("💬 Open AI Agent Chat", key="btn_sidebar_ai_agent_help", use_container_width=True, help="Chat live with Farmland Due Diligence Agent"):
+    show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
+
+# 11. CPU, RAM & Hosted Environment Telemetry Widget
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🖥️ Hosted System Telemetry")
 with st.sidebar:
@@ -935,10 +1093,16 @@ filtered_parcels.sort(key=lambda x: routings.get(str(x["id"]), {}).get("road_km"
 # -------------------------------------------------------------
 # MAIN APP HEADER & KPIS
 # -------------------------------------------------------------
-st.title("🌾 UP East & Varanasi Farmlands Intelligence Platform")
-st.markdown(
-    f"**Concentric Agro-Intelligence & Due Diligence** | Active Zero-Point: **{active_lm['name']}**"
-)
+hdr_c1, hdr_c2 = st.columns([3.8, 1.4])
+with hdr_c1:
+    st.title("🌾 UP East & Varanasi Farmlands Intelligence Platform")
+    st.markdown(
+        f"**Concentric Agro-Intelligence & Due Diligence** | Active Zero-Point: **{active_lm['name']}**"
+    )
+with hdr_c2:
+    st.write("")
+    if st.button("💬 🤖 Help / Ask AI Agent", key="btn_top_header_ai_help", use_container_width=True, type="primary", help="Chat live with the Farmland Due Diligence Agent"):
+        show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
 
 # Top KPI Metric Cards (Responsive on Mobile)
 kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
@@ -1726,6 +1890,28 @@ with view_tabs[1]:
 
         # 3. Independent Critique AI Risk Audit & Negative Feedbacks Dossier
         render_html_block(render_critique_ai_card_html(active_farm))
+
+        # Contextual AI Due Diligence Button for this specific property
+        if st.button(
+            f"💬 🤖 Ask AI Agent to Audit Property #{master_sno_map.get(active_pid, selected_farm_idx + 1)}",
+            key=f"btn_tab2_ask_agent_{active_pid}",
+            use_container_width=True,
+            help="Ask the Farmland AI Agent to perform an in-depth due diligence review of this specific property"
+        ):
+            st.session_state["chat_messages"].append({
+                "role": "user",
+                "content": f"Please perform an in-depth legal due diligence and agronomic review for Property #{master_sno_map.get(active_pid, selected_farm_idx + 1)}: '{active_farm['name']}' in {active_farm.get('regional_district')}. Review Section 98 SC/ST status ({active_farm.get('caste_category')}), water TDS ({active_farm.get('water_tds_ppm')} ppm), soil ({active_farm.get('soil_type')}), road access ({active_farm.get('road_access_width_ft')} ft), and price (₹{active_farm.get('price_per_acre_lakhs')} L/Acre)."
+            })
+            res = query_farmland_agent(
+                user_query=st.session_state["chat_messages"][-1]["content"],
+                chat_history=st.session_state["chat_messages"][:-1],
+                all_parcels=all_parcels,
+                active_center_name=active_lm["name"],
+                token=st.session_state.get("user_github_token"),
+                preferred_model=st.session_state.get("active_github_model")
+            )
+            st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
+            show_farmland_ai_agent_dialog(all_parcels, active_lm["name"])
 
         # 4. Direct Seller Contact Card
         render_html_block(render_seller_contact_card_html(active_farm))
