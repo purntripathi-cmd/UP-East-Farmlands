@@ -27,12 +27,35 @@ GITHUB_MODELS_ENDPOINTS = [
 ]
 
 
+def get_server_secret_github_token() -> Optional[str]:
+    """
+    Checks if a server-side secret GitHub token exists in Streamlit secrets or environment.
+    Never exposes or logs secret tokens.
+    """
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            for sec_key in ("GITHUB_TOKEN", "GH_TOKEN", "GITHUB_PAT"):
+                if sec_key in st.secrets:
+                    val = str(st.secrets[sec_key]).strip()
+                    if val:
+                        return val
+    except Exception:
+        pass
+
+    for env_key in ("GITHUB_TOKEN", "GH_TOKEN", "GITHUB_PAT"):
+        val = os.environ.get(env_key, "").strip()
+        if val:
+            return val
+    return None
+
+
 def get_available_github_token() -> Optional[str]:
     """
     Retrieves GitHub token from Streamlit session state, Streamlit secrets, or environment.
     Never exposes or logs secret tokens.
     """
-    # 1. Check user-supplied token in Streamlit session_state
+    # 1. Check user-supplied manual token in Streamlit session_state
     try:
         import streamlit as st
         token = st.session_state.get("user_github_token", "").strip()
@@ -41,28 +64,8 @@ def get_available_github_token() -> Optional[str]:
     except Exception:
         pass
 
-    # 2. Check Streamlit secrets
-    try:
-        import streamlit as st
-        if hasattr(st, "secrets"):
-            if "GITHUB_TOKEN" in st.secrets:
-                val = str(st.secrets["GITHUB_TOKEN"]).strip()
-                if val:
-                    return val
-            if "GH_TOKEN" in st.secrets:
-                val = str(st.secrets["GH_TOKEN"]).strip()
-                if val:
-                    return val
-    except Exception:
-        pass
-
-    # 3. Check environment variables
-    for env_key in ("GITHUB_TOKEN", "GH_TOKEN", "GITHUB_PAT"):
-        val = os.environ.get(env_key, "").strip()
-        if val:
-            return val
-
-    return None
+    # 2. Check Server-side Secrets (Streamlit Cloud Secrets or environment)
+    return get_server_secret_github_token()
 
 
 def probe_best_github_model(token: str) -> Tuple[Optional[str], str]:

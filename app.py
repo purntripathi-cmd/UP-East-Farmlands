@@ -84,6 +84,7 @@ from utils.github_ai_agent import (
     query_farmland_agent,
     probe_best_github_model,
     get_available_github_token,
+    get_server_secret_github_token,
     CANDIDATE_GITHUB_MODELS
 )
 
@@ -653,7 +654,7 @@ if "chat_messages" not in st.session_state:
     ]
 
 if "user_github_token" not in st.session_state:
-    st.session_state["user_github_token"] = get_available_github_token() or ""
+    st.session_state["user_github_token"] = ""
 
 if "active_github_model" not in st.session_state:
     st.session_state["active_github_model"] = "gpt-4o-mini"
@@ -668,13 +669,16 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
     Interactive Farmland Due Diligence Agent Chat Modal (Accessible from all tabs).
     Connects to GitHub Models (GPT-4o, Llama 3.1, etc.) or uses built-in legal engine.
     """
-    cur_tok = (st.session_state.get("user_github_token") or "").strip() or get_available_github_token()
+    server_tok = get_server_secret_github_token()
+    manual_tok = (st.session_state.get("user_github_token") or "").strip()
+    active_tok = manual_tok or server_tok
     cur_m = st.session_state.get("active_github_model", "gpt-4o-mini")
 
     d_col1, d_col2 = st.columns([3, 1.2])
     with d_col1:
-        if cur_tok:
-            st.success(f"🟢 **Live GitHub Models Active:** `{cur_m}` (Free Tier)")
+        if active_tok:
+            tier_label = "Free Public Access Enabled" if (server_tok and not manual_tok) else "Custom Token Active"
+            st.success(f"🟢 **Live GitHub Models Active:** `{cur_m}` ({tier_label})")
         else:
             st.info("ℹ️ **Built-in Legal & Farmland AI Engine Active** (100% Free, No Token Required)")
     with d_col2:
@@ -684,26 +688,34 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
             ]
             st.rerun()
 
-    with st.expander("⚙️ GitHub Token & Auto-Model Check (Free Tier)", expanded=not bool(cur_tok)):
-        st.markdown("##### 🔑 Connect Free GitHub Models (GPT-4o / Llama 3.1)")
-        st.caption("Enter a free GitHub Personal Access Token (PAT). The app will automatically test and pick the best available model.")
+    expander_title = "⚙️ Advanced AI Model Settings (Optional)" if server_tok else "⚙️ GitHub Token & Auto-Model Check (Free Tier)"
+    with st.expander(expander_title, expanded=not bool(active_tok)):
+        if server_tok:
+            st.markdown("##### 🔒 Server-Managed GitHub Models Active")
+            st.caption("A server secret token is active on this deployment. All platform visitors can chat with the AI for free without adding their own PAT.")
+            placeholder_text = "Server token already active. Enter here only if you wish to override..."
+        else:
+            st.markdown("##### 🔑 Connect Free GitHub Models (GPT-4o / Llama 3.1)")
+            st.caption("Enter a free GitHub Personal Access Token (PAT). The app will automatically test and pick the best available model.")
+            placeholder_text = "ghp_... or github_pat_..."
 
         inp_col1, inp_col2 = st.columns([2.8, 1.4])
         with inp_col1:
             gh_input = st.text_input(
                 "GitHub Personal Access Token (PAT):",
-                value=st.session_state.get("user_github_token", ""),
+                value=manual_tok,
                 type="password",
-                placeholder="ghp_... or github_pat_...",
+                placeholder=placeholder_text,
                 key="dlg_gh_token_input"
             )
         with inp_col2:
             st.write("")
             if st.button("🧪 Check & Select Best Model", key="btn_dlg_probe_model", use_container_width=True):
                 st.session_state["user_github_token"] = gh_input.strip()
-                if gh_input.strip():
+                probe_target_tok = gh_input.strip() or server_tok
+                if probe_target_tok:
                     with st.spinner("Probing GitHub Models (GPT-4o, Llama 3.1, Mistral, Phi-3.5)..."):
-                        best_m, msg = probe_best_github_model(gh_input.strip())
+                        best_m, msg = probe_best_github_model(probe_target_tok)
                         if best_m:
                             st.session_state["active_github_model"] = best_m
                             st.session_state["model_probe_feedback"] = f"✅ Best model selected: **{best_m}** ({msg})"
@@ -767,7 +779,7 @@ def show_farmland_ai_agent_dialog(parcels, center_name):
                 chat_history=st.session_state["chat_messages"][:-1],
                 all_parcels=parcels,
                 active_center_name=center_name,
-                token=st.session_state.get("user_github_token"),
+                token=active_tok,
                 preferred_model=st.session_state.get("active_github_model")
             )
             st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
@@ -1907,7 +1919,7 @@ with view_tabs[1]:
                 chat_history=st.session_state["chat_messages"][:-1],
                 all_parcels=all_parcels,
                 active_center_name=active_lm["name"],
-                token=st.session_state.get("user_github_token"),
+                token=(st.session_state.get("user_github_token") or "").strip() or get_available_github_token(),
                 preferred_model=st.session_state.get("active_github_model")
             )
             st.session_state["chat_messages"].append({"role": "assistant", "content": res["response"]})
