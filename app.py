@@ -81,6 +81,16 @@ from utils.farmland_view import (
 )
 from utils.excel_exporter import generate_excel_workbook, export_master_csv
 from utils.farmland_repository import create_and_add_farmland, load_all_parcels
+from utils.source_exclusion_manager import (
+    load_excluded_sources,
+    exclude_source,
+    restore_source,
+    restore_all_sources,
+    is_source_excluded,
+    build_sources_registry,
+    get_channel_summaries,
+    classify_source_channel
+)
 from utils.github_ai_agent import (
     query_farmland_agent,
     probe_best_github_model,
@@ -652,6 +662,12 @@ if "show_ignored" not in st.session_state:
 if "show_fake" not in st.session_state:
     st.session_state["show_fake"] = False
 
+if "excluded_sources" not in st.session_state:
+    st.session_state["excluded_sources"] = load_excluded_sources()
+
+if "show_excluded_sources" not in st.session_state:
+    st.session_state["show_excluded_sources"] = False
+
 if "map_clicked_coord" not in st.session_state:
     st.session_state["map_clicked_coord"] = None
 
@@ -912,6 +928,7 @@ if st.sidebar.button("🔄 Refresh Farmland Data Now", type="primary", use_conta
         scan_report = run_weekly_scan(all_parcels, force=True)
         st.session_state["favorites"] = load_favorites()
         st.session_state["property_flags"] = load_property_flags()
+        st.session_state["excluded_sources"] = load_excluded_sources()
         st.sidebar.success(f"✅ Data refreshed! Scanned {scan_report['parcels_scanned']} parcels ({scan_report['duplicates_suppressed']} duplicates suppressed).")
         time.sleep(0.3)
         st.rerun()
@@ -1144,6 +1161,11 @@ for p in all_parcels:
         if flag_type == "fake" and not st.session_state["show_fake"]:
             continue
 
+    # Check Source Exclusion Filter (Quality Control for Outdated / Incorrect Sources)
+    if not st.session_state.get("show_excluded_sources", False):
+        if is_source_excluded(p, st.session_state.get("excluded_sources", {})):
+            continue
+
     # Check Multi-User Favorite Filter or 1-Click Starred KPI Toggle
     if st.session_state.get("show_only_favorites_in_tab1", False) or "⭐ All Favorites" in sel_fav_filter:
         if not is_favorite(pid, cached_set=st.session_state["favorites"]):
@@ -1267,6 +1289,12 @@ if st.session_state.get("show_only_favorites_in_tab1", False):
             st.session_state["fav_user_filter"] = "All Properties (Inventory & Favorites)"
             st.rerun()
 
+cur_excluded_sources = st.session_state.get("excluded_sources", {})
+if cur_excluded_sources and not st.session_state.get("show_excluded_sources", False):
+    ex_hidden_count = sum(1 for p in all_parcels if is_source_excluded(p, cur_excluded_sources))
+    if ex_hidden_count > 0:
+        st.info(f"🛡️ **Source Quality Filter Active:** {len(cur_excluded_sources)} source(s) excluded due to outdated/wrong data ({ex_hidden_count} parcels filtered out from map and inventory). Manage sources in the **🌐 Data Sources & Quality Control** tab.")
+
 # -------------------------------------------------------------
 # TAB NAVIGATION (Clean, focused strictly on Farmlands)
 # -------------------------------------------------------------
@@ -1276,6 +1304,7 @@ view_tabs = st.tabs([
     "📊 Master Farmland Comparison Ledger",
     "📰 Published News & Caveat Notices",
     "⭐ Shortlisted Favorites Matrix",
+    "🌐 Data Sources & Quality Control",
     "📥 Export Center (Excel / CSV)"
 ])
 
@@ -2094,6 +2123,39 @@ with view_tabs[1]:
                - Search: `"{active_dist}" "{active_loc}" "खतौनी" site:upbhulekh.gov.in`
             """)
 
+        # 6. Quick Source Quality Audit & Exclusion Tool for Active Farm
+        active_src_name = active_farm.get("source_name", "Unknown Source")
+        active_news_src = active_farm.get("published_news_source", "")
+        is_cur_src_excluded = is_source_excluded(active_farm, st.session_state.get("excluded_sources", {}))
+
+        with st.expander(f"🌐 Source Quality & Audit: {active_src_name}", expanded=False):
+            st.markdown(f"**Origin Source:** `{active_src_name}`  \n**Published Notice Source:** `{active_news_src}`")
+            if is_cur_src_excluded:
+                st.warning(f"⚠️ All farmlands originating from '{active_src_name}' are currently **EXCLUDED** from active inventory.")
+                if st.button(f"✅ Restore All Farmlands from '{active_src_name}'", key=f"btn_t2_restore_src_{active_pid}", use_container_width=True):
+                    restore_source(active_src_name)
+                    st.session_state["excluded_sources"] = load_excluded_sources()
+                    st.success(f"Restored '{active_src_name}'!")
+                    st.rerun()
+            else:
+                st.info("If data, phone numbers, or records from this source are found outdated or wrong, you can exclude all data originating from this source across the entire portfolio with one click:")
+                t2_ex_reason = st.selectbox(
+                    "Reason for exclusion:",
+                    options=[
+                        "All data / contact details found outdated",
+                        "Incorrect / non-functional mobile numbers (demo placeholders)",
+                        "Unverified land records / title discrepancy",
+                        "Expired SARFAESI auction notice or sold out",
+                        "Dubious broker listing"
+                    ],
+                    key=f"sb_t2_ex_reason_{active_pid}"
+                )
+                if st.button(f"🚫 Exclude All Farmlands from '{active_src_name}'", key=f"btn_t2_ex_src_{active_pid}", type="primary", use_container_width=True):
+                    exclude_source(active_src_name, reason=t2_ex_reason, source_type="source_name")
+                    st.session_state["excluded_sources"] = load_excluded_sources()
+                    st.error(f"🚫 Excluded '{active_src_name}'! All parcels from this source are now filtered out.")
+                    st.rerun()
+
     else:
         st.info("No farmlands to display with current filter criteria.")
 
@@ -2111,6 +2173,7 @@ with view_tabs[2]:
                 scan_res = run_weekly_scan(all_parcels, force=True)
                 st.session_state["favorites"] = load_favorites()
                 st.session_state["property_flags"] = load_property_flags()
+                st.session_state["excluded_sources"] = load_excluded_sources()
                 st.success(f"✅ Data refreshed! Scanned {scan_res['parcels_scanned']} parcels.")
                 time.sleep(0.3)
                 st.rerun()
@@ -2390,9 +2453,217 @@ with view_tabs[4]:
         st.info(f"No shortlisted farmlands found for {sel_t5_user_filter}. You can add favorites in Tab 1 or Tab 2 under any username!")
 
 # -------------------------------------------------------------
-# TAB 6: EXPORT CENTER (EXCEL & CSV)
+# TAB 6: DATA SOURCES & QUALITY CONTROL (SOURCE REGISTRY & EXCLUSIONS)
 # -------------------------------------------------------------
 with view_tabs[5]:
+    st.markdown("### 🌐 Farmland Data Sources & Quality Control Hub")
+    st.caption("Audit all origin registries, bank distress recovery portals, e-paper gazettes, and private agro-portals. Exclude specific sources or entire sourcing channels if data is found outdated, phone numbers are invalid, or records are non-verifiable.")
+
+    # Compute Source Registry and Summaries
+    sources_registry = build_sources_registry(all_parcels, st.session_state["excluded_sources"])
+    channel_summaries = get_channel_summaries(sources_registry)
+    total_sources_count = len(sources_registry)
+    excluded_sources_count = sum(1 for s in sources_registry if s["is_excluded"])
+    active_sources_count = total_sources_count - excluded_sources_count
+    excluded_parcels_count = sum(s["parcel_count"] for s in sources_registry if s["is_excluded"])
+
+    # 1. Top Metrics Bar
+    src_kpi1, src_kpi2, src_kpi3, src_kpi4 = st.columns(4)
+    with src_kpi1:
+        st.metric("Total Sourcing Entities", total_sources_count, help="Unique platforms, revenue portals, and channels")
+    with src_kpi2:
+        st.metric("🟢 Active Included", active_sources_count, f"{round(active_sources_count / total_sources_count * 100, 1)}% of registry")
+    with src_kpi3:
+        st.metric("🚫 Excluded (Outdated/Wrong)", excluded_sources_count, f"{excluded_parcels_count} parcels filtered out")
+    with src_kpi4:
+        status_badge = "✅ Filter Active (Hidden)" if not st.session_state.get("show_excluded_sources", False) else "⚠️ Filter Suspended (Shown)"
+        st.metric("Global View Status", status_badge)
+
+    # 2. Global Safety Toggles & Mass Actions
+    src_c1, src_c2, src_c3 = st.columns([2.5, 1.2, 1.3])
+    with src_c1:
+        allow_ex = st.checkbox(
+            "👁️ Temporarily show excluded sources' parcels in Maps, Dossiers & Ledgers",
+            value=st.session_state.get("show_excluded_sources", False),
+            key="chk_show_excluded_sources",
+            help="When checked, excluded sources will remain visible in main discovery views for auditing purposes."
+        )
+        if allow_ex != st.session_state.get("show_excluded_sources", False):
+            st.session_state["show_excluded_sources"] = allow_ex
+            st.rerun()
+    with src_c2:
+        if st.button("🔄 Refresh Registry", key="btn_refresh_sources_registry", use_container_width=True):
+            st.session_state["excluded_sources"] = load_excluded_sources()
+            st.rerun()
+    with src_c3:
+        if excluded_sources_count > 0:
+            if st.button("↩️ Restore All Sources", key="btn_restore_all_sources", type="secondary", use_container_width=True):
+                restore_all_sources()
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.success("✅ All sources restored to active inventory!")
+                st.rerun()
+
+    st.markdown("---")
+
+    # 3. Channel-Level Quality Overview & Quick Bulk Actions
+    with st.expander("🏢 Sourcing Channels & Bulk Quality Controls", expanded=True):
+        st.markdown("#### High-Level Sourcing Channels")
+        st.caption("Exclude an entire channel with one click if all data from that tier (e.g. Social Media video walkthroughs or Private Portals) is deemed unverified or outdated.")
+
+        for ch in channel_summaries:
+            ch_name = ch["channel"]
+            ch_tot_p = ch["total_parcels"]
+            ch_act_p = ch["active_parcels"]
+            ch_ex_p = ch["excluded_parcels"]
+            is_ch_excluded = ch_name in st.session_state["excluded_sources"]
+
+            c_col1, c_col2, c_col3, c_col4 = st.columns([3.2, 1.2, 1.2, 1.4])
+            with c_col1:
+                st.markdown(f"**{ch_name}**  \n<span style='color: #64748B; font-size: 12px;'>{ch['total_sources']} sources • {ch_tot_p} total farmland parcels</span>", unsafe_allow_html=True)
+            with c_col2:
+                st.markdown(f"<span style='color: #059669; font-weight: 700;'>🟢 {ch_act_p} Active</span>", unsafe_allow_html=True)
+            with c_col3:
+                if ch_ex_p > 0:
+                    st.markdown(f"<span style='color: #DC2626; font-weight: 700;'>🚫 {ch_ex_p} Excluded</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown("<span style='color: #94A3B8;'>0 Excluded</span>", unsafe_allow_html=True)
+            with c_col4:
+                if is_ch_excluded:
+                    if st.button("✅ Restore Channel", key=f"btn_rest_ch_{hash(ch_name)}", use_container_width=True):
+                        restore_source(ch_name)
+                        st.session_state["excluded_sources"] = load_excluded_sources()
+                        st.success(f"Restored channel: {ch_name}!")
+                        st.rerun()
+                else:
+                    if st.button("🚫 Exclude Channel", key=f"btn_ex_ch_{hash(ch_name)}", use_container_width=True):
+                        exclude_source(ch_name, reason="Entire channel flagged as outdated or unverified", source_type="channel")
+                        st.session_state["excluded_sources"] = load_excluded_sources()
+                        st.warning(f"Excluded {ch_name}! All {ch_tot_p} parcels hidden.")
+                        st.rerun()
+            st.divider()
+
+    # 4. Interactive Exclusion Tool for Individual Sources
+    st.markdown("#### 🚫 Exclude a Specific Source (Outdated / Incorrect Data)")
+    st.caption("Select any individual source below to remove all its associated farmlands from the active map, dossier, comparison ledger, and news notices.")
+
+    active_sources_options = [s["source_name"] for s in sources_registry if not s["is_excluded"]]
+    if active_sources_options:
+        ex_form_c1, ex_form_c2, ex_form_c3 = st.columns([2.5, 2.0, 1.5])
+        with ex_form_c1:
+            sel_source_to_exclude = st.selectbox(
+                "Select Source to Exclude:",
+                options=active_sources_options,
+                key="sb_sel_source_to_exclude",
+                format_func=lambda x: f"{x} ({next((s['parcel_count'] for s in sources_registry if s['source_name'] == x), 0)} parcels)"
+            )
+        with ex_form_c2:
+            sel_reason = st.selectbox(
+                "Reason for Exclusion:",
+                options=[
+                    "All data / contact details from this source found outdated",
+                    "Incorrect / non-functional mobile numbers (demo placeholders)",
+                    "Unverified land title claims / revenue discrepancy",
+                    "Expired SARFAESI auction notice or sold out",
+                    "Unverified broker intermediary / questionable pricing",
+                    "Other (Custom Reason)"
+                ],
+                key="sb_sel_exclusion_reason"
+            )
+            custom_reason = ""
+            if sel_reason == "Other (Custom Reason)":
+                custom_reason = st.text_input("Specify custom reason:", key="txt_custom_exclusion_reason")
+        with ex_form_c3:
+            st.write("")
+            st.write("")
+            if st.button("🚫 Exclude Source Now", key="btn_do_exclude_source", type="primary", use_container_width=True):
+                final_reason = custom_reason.strip() if sel_reason == "Other (Custom Reason)" and custom_reason.strip() else sel_reason
+                exclude_source(sel_source_to_exclude, reason=final_reason, source_type="source_name")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.error(f"🚫 Excluded '{sel_source_to_exclude}'! Associated parcels filtered from inventory.")
+                st.rerun()
+    else:
+        st.info("All sources are currently excluded. Click 'Restore All Sources' above to restore them.")
+
+    # 5. Currently Excluded Sources List (if any)
+    if excluded_sources_count > 0:
+        st.markdown(f"#### ⚠️ Currently Excluded Sources ({excluded_sources_count} Sources • {excluded_parcels_count} Farmlands Filtered)")
+        for ex_src in [s for s in sources_registry if s["is_excluded"]]:
+            ex_c1, ex_c2, ex_c3 = st.columns([3.5, 1.5, 1.0])
+            with ex_c1:
+                st.markdown(
+                    f"**{ex_src['source_name']}**  \n"
+                    f"<span style='color: #B91C1C; font-size: 12px;'>Reason: {ex_src['exclusion_reason']}</span> • "
+                    f"<span style='color: #64748B; font-size: 11.5px;'>Excluded on: {ex_src['exclusion_date']}</span>  \n"
+                    f"<span style='color: #475569; font-size: 12px;'>Channel: {ex_src['source_channel']} • {ex_src['parcel_count']} parcels affected ({ex_src['districts_display']})</span>",
+                    unsafe_allow_html=True
+                )
+            with ex_c2:
+                st.markdown(f"<a href='{ex_src['source_url']}' target='_blank' style='font-size: 12px; color: #1D4ED8; text-decoration: none;'>🔗 Open Source Website ↗</a>", unsafe_allow_html=True)
+            with ex_c3:
+                if st.button("✅ Restore", key=f"btn_restore_single_{hash(ex_src['source_name'])}", use_container_width=True):
+                    restore_source(ex_src["source_name"])
+                    st.session_state["excluded_sources"] = load_excluded_sources()
+                    st.success(f"Restored '{ex_src['source_name']}'!")
+                    st.rerun()
+            st.divider()
+
+    st.markdown("---")
+
+    # 6. Master Sources Directory Table & Search
+    st.markdown("#### 📋 Master Sourcing Directory & Registry")
+    st.caption("Browse all distinct data providers, verify URLs, examine parcel counts and due diligence ratings.")
+
+    dir_f1, dir_f2, dir_f3 = st.columns([2.5, 1.5, 1.5])
+    with dir_f1:
+        txt_src_search = st.text_input("🔍 Search sources by name, district, or channel...", key="txt_search_sources").strip().lower()
+    with dir_f2:
+        ch_filter_options = ["All Channels"] + [c["channel"] for c in channel_summaries]
+        sel_ch_filter = st.selectbox("Filter by Channel:", options=ch_filter_options, key="sb_filter_sources_channel")
+    with dir_f3:
+        sel_status_filter = st.selectbox("Filter by Status:", options=["All Sources", "Active Only (Included)", "Excluded Only (Hidden)"], key="sb_filter_sources_status")
+
+    # Filter registry according to inputs
+    disp_registry = list(sources_registry)
+    if txt_src_search:
+        disp_registry = [
+            s for s in disp_registry
+            if txt_src_search in s["source_name"].lower()
+            or txt_src_search in s["source_channel"].lower()
+            or txt_src_search in s["districts_display"].lower()
+            or txt_src_search in s["published_news_source"].lower()
+        ]
+    if sel_ch_filter != "All Channels":
+        disp_registry = [s for s in disp_registry if s["source_channel"] == sel_ch_filter]
+    if sel_status_filter == "Active Only (Included)":
+        disp_registry = [s for s in disp_registry if not s["is_excluded"]]
+    elif sel_status_filter == "Excluded Only (Hidden)":
+        disp_registry = [s for s in disp_registry if s["is_excluded"]]
+
+    st.caption(f"Showing **{len(disp_registry)}** of {total_sources_count} sources:")
+
+    if disp_registry:
+        table_data = []
+        for s in disp_registry:
+            table_data.append({
+                "Status": "🚫 Excluded" if s["is_excluded"] else "🟢 Active",
+                "Source Name": s["source_name"],
+                "Channel": s["source_channel"].split(" ", 1)[-1],
+                "Parcels": s["parcel_count"],
+                "Districts": s["districts_display"],
+                "Tier": s["sourcing_tier"].split(":", 1)[0],
+                "Avg Score": f"{s['avg_due_diligence_score']}/100",
+                "Avg Rate/Acre": f"₹{s['avg_price_acre']}L",
+                "Website URL": s["source_url"],
+                "Exclusion Reason": s["exclusion_reason"] if s["is_excluded"] else "—"
+            })
+        st.dataframe(pd.DataFrame(table_data), use_container_width=True, height=420)
+    else:
+        st.info("No sources match the selected directory filter criteria.")
+
+# -------------------------------------------------------------
+# TAB 7: EXPORT CENTER (EXCEL & CSV)
+# -------------------------------------------------------------
+with view_tabs[6]:
     st.markdown("### 📥 Farmland Portfolio Export Center")
     st.caption("Generate institutional-grade multi-sheet Excel workbooks and CSV files containing all spatial, financial, agronomic, Critique AI, and legal provenance columns.")
 

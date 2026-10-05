@@ -1193,6 +1193,99 @@ def test_legal_due_diligence_official_verification_links_and_bank_enquiry_manual
     assert "upbhulekh.gov.in" in app_code
 
 
+def test_source_exclusion_manager_persistence_and_filtering():
+    """Tests loading, excluding, restoring, and checking source exclusions."""
+    from utils.source_exclusion_manager import (
+        load_excluded_sources,
+        save_excluded_sources,
+        exclude_source,
+        restore_source,
+        restore_all_sources,
+        is_source_excluded,
+        classify_source_channel,
+        build_sources_registry,
+        get_channel_summaries,
+        filter_parcels_by_source_exclusion
+    )
+
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "up_east_farmlands.json")
+    with open(data_path, "r", encoding="utf-8") as f:
+        parcels = json.load(f)
+
+    # 1. Clean slate
+    restore_all_sources()
+    assert load_excluded_sources() == {}
+
+    # 2. Build registry
+    registry = build_sources_registry(parcels)
+    assert len(registry) >= 60
+    assert any(s["source_name"] == "SFarmsIndia Verified Listing" for s in registry)
+
+    channels = get_channel_summaries(registry)
+    assert len(channels) >= 4
+    channel_names = [c["channel"] for c in channels]
+    assert any("Bank SARFAESI" in c for c in channel_names)
+    assert any("Government" in c for c in channel_names)
+
+    # 3. Test channel classification
+    assert "Bank SARFAESI" in classify_source_channel("Bank SARFAESI Auction Portal")
+    assert "Government" in classify_source_channel("UP Bhulekh RTC")
+    assert "Social Media" in classify_source_channel("Direct Farmer YouTube Channel")
+    assert "Private Farmland" in classify_source_channel("SFarmsIndia Verified Listing")
+
+    # 4. Exclude a specific source
+    test_src = "SFarmsIndia Verified Listing"
+    assert exclude_source(test_src, reason="Outdated seller contact numbers") is True
+    ex_dict = load_excluded_sources()
+    assert test_src in ex_dict
+    assert ex_dict[test_src]["reason"] == "Outdated seller contact numbers"
+
+    # Check parcel filtering
+    matching_p = next(p for p in parcels if p.get("source_name") == test_src)
+    non_matching_p = next(p for p in parcels if p.get("source_name") != test_src)
+
+    assert is_source_excluded(matching_p, ex_dict) is True
+    assert is_source_excluded(non_matching_p, ex_dict) is False
+
+    filtered_active = filter_parcels_by_source_exclusion(parcels, ex_dict, allow_excluded=False)
+    filtered_all = filter_parcels_by_source_exclusion(parcels, ex_dict, allow_excluded=True)
+    assert len(filtered_active) < len(parcels)
+    assert len(filtered_all) == len(parcels)
+
+    # 5. Restore source
+    assert restore_source(test_src) is True
+    assert test_src not in load_excluded_sources()
+    assert is_source_excluded(matching_p, load_excluded_sources()) is False
+
+    # 6. Exclude by channel
+    test_channel = "📹 Social Media & Farmer Video Walkthrough Leads"
+    exclude_source(test_channel, reason="Unverified video leads")
+    yt_parcel = next(p for p in parcels if "youtube" in p.get("source_name", "").lower())
+    assert is_source_excluded(yt_parcel, load_excluded_sources()) is True
+
+    # 7. Restore all
+    restore_all_sources()
+    assert load_excluded_sources() == {}
+
+
+def test_app_data_sources_tab_and_quality_control_integration():
+    """Verifies that app.py defines the Data Sources tab and wires source exclusion."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    assert "🌐 Data Sources & Quality Control" in app_code
+    assert "Farmland Data Sources & Quality Control Hub" in app_code
+    assert "build_sources_registry" in app_code
+    assert "is_source_excluded" in app_code
+    assert "load_excluded_sources" in app_code
+    assert "exclude_source" in app_code
+    assert "restore_source" in app_code
+    assert "restore_all_sources" in app_code
+    assert "Source Quality & Audit" in app_code
+    assert "Master Sourcing Directory & Registry" in app_code
+
+
 
 
 
