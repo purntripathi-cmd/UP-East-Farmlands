@@ -2041,6 +2041,59 @@ with view_tabs[1]:
         # 4. Direct Seller Contact Card
         render_html_block(render_seller_contact_card_html(active_farm))
 
+        # 5. Official Land Due Diligence & Bank Auction Verification Manual
+        with st.expander("📖 Official Land Due Diligence & Bank Auction Enquiry Manual", expanded=False):
+            active_dist = active_farm.get("regional_district", "Varanasi")
+            active_loc = active_farm.get("location", "").split(",")[0].strip()
+            active_khasra = active_farm.get("khasra_khatauni_number", "").split(",")[-1].replace("Khasra", "").strip()
+            st.markdown(f"""
+            #### 🏛️ How to Verify Real Land Records for this Property ({active_dist})
+            
+            1. **UP Bhulekh Land Records Portal (Board of Revenue, Uttar Pradesh)**:
+               - **Official Portal**: [upbhulekh.gov.in](https://upbhulekh.gov.in/public/public_ror/action/public_action.jsp)
+               - **Section to Visit**: Click on **"खतौनी (अधिकार अभिलेख) की नकल देखें"** (View Khatauni / Record of Rights).
+               - **Steps**:
+                 1. Enter CAPTCHA security code.
+                 2. Select District (**{active_dist}**).
+                 3. Select Tehsil (e.g., Sadar / Pindra / Rajatalaab / respective tehsil).
+                 4. Select Village (e.g., **{active_loc}**).
+                 5. Search by **Khasra / Gata Number** (`{active_khasra}`), **Khatauni Number**, or **Landowner Name**.
+               - **What to verify**: Exact Bhumidhar names, Shreni (Tenure classification), bank hypothecation liens in Remarks column, and Section 98 SC/ST transfer restrictions.
+            
+            2. **12-Year Encumbrance Search (IGRSUP Registry Department)**:
+               - **Official Portal**: [igrsup.gov.in](https://igrsup.gov.in/)
+               - **Section**: **"सम्पत्ति विवरण" (Property Registration Details / E-Barah Sala Search)**.
+               - Shows all registered sale deeds, bank mortgages, and court attachments executed over the last 12-30 years.
+            
+            3. **Revenue Court Disputes (UP RCCMS Portal)**:
+               - **Official Portal**: [vaad.up.nic.in](https://vaad.up.nic.in/)
+               - Check if there is an active dispute, partition claim, or boundary dispute pending before the Tehsildar or SDM court.
+            
+            ---
+            
+            #### 🏦 How to Enquire from the Respective Bank (SARFAESI Distressed Asset Auctions)
+            
+            *The contact numbers in this research demonstration application are simulated placeholders for privacy. To enquire about genuine bank-listed distressed agricultural properties:*
+            
+            1. **IBAPI Central Bank Auction Portal (Indian Banks' Association)**:
+               - **Official Portal**: [ibapi.in](https://ibapi.in/sale_info_home.aspx)
+               - All 12 public sector banks (Bank of Baroda, SBI, PNB, Union Bank, etc.) are legally mandated to list SARFAESI auctions here.
+               - Filter by: **State = Uttar Pradesh**, **District = {active_dist}**, **Property Type = Agricultural Land**.
+               - **What you get**: Exact Authorised Officer Name, **Direct Official Bank Mobile Number**, Branch Email, Reserve Price, EMD, and downloadable 30-Day Auction Notice PDF.
+            
+            2. **Walk into the Local Stressed Asset Recovery Branch (SARB / SAMB)**:
+               - In Varanasi, walk into the Zonal/Regional Recovery Offices:
+                 - **Bank of Baroda Zonal Office**: Orderly Bazar, Varanasi.
+                 - **SBI Stressed Assets Recovery Branch (SARB)**: Sigra / Kacheri, Varanasi.
+                 - **PNB Circle Office**: Sigra, Varanasi.
+                 - **Union Bank of India Regional Office**: Vidyapeeth Road, Varanasi.
+               - Meet the **Chief Manager / Authorised Officer (Recovery)** for upcoming agricultural property auction schedules.
+            
+            3. **Targeted Google Search Syntax**:
+               - Search: `site:ibapi.in "{active_dist}" "agricultural"`
+               - Search: `"{active_dist}" "{active_loc}" "खतौनी" site:upbhulekh.gov.in`
+            """)
+
     else:
         st.info("No farmlands to display with current filter criteria.")
 

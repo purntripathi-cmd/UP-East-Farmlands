@@ -12,6 +12,7 @@ Guaranteed mobile-responsive layout with min-height 44px touch targets and zero 
 
 import re
 import textwrap
+import urllib.parse
 from typing import Dict, Any, List
 from utils.critic_ai import evaluate_property_critique
 
@@ -282,6 +283,14 @@ def render_legal_and_news_card_html(item: Dict[str, Any]) -> str:
     news_date = item.get("published_news_date", "02 Oct 2026")
     notice_type = item.get("notice_or_legal_type", "30-Day Title Caveat Cleared")
 
+    dist = item.get("regional_district", "Varanasi")
+    loc = item.get("location", "")
+    khasra = item.get("khasra_khatauni_number", "")
+    g_search_query = urllib.parse.quote(f"{dist} {loc} {khasra} UP Bhulekh")
+    google_search_url = f"https://www.google.com/search?q={g_search_query}"
+    bhulekh_url = "https://upbhulekh.gov.in/public/public_ror/action/public_action.jsp"
+    ibapi_url = "https://ibapi.in/sale_info_home.aspx"
+
     raw_html = f"""
 <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-bottom: 12px; color: #0F172A; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
@@ -298,9 +307,14 @@ Score: {score}/100 ({item.get('due_diligence_grade', 'A+ Sovereign')})
 <span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #FCD34D;">{notice_type}</span>
 </div>
 <div style="color: #78350F; font-weight: 700; font-size: 13px; line-height: 1.3;">{news_title}</div>
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11.5px; flex-wrap: wrap; gap: 6px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11.5px; flex-wrap: wrap; gap: 6px;">
 <span style="color: #92400E;">Date: {news_date}</span>
-<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 32px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(217,119,6,0.3);">Verify Link ↗</a>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+<a href="{news_url}" target="_blank" style="background: #D97706; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 30px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(217,119,6,0.3);">Verify Link ↗</a>
+<a href="{bhulekh_url}" target="_blank" style="background: #047857; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 30px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(4,120,87,0.3);" title="Search Khatauni & Khasra on official UP Board of Revenue portal">🏛️ UP Bhulekh ↗</a>
+<a href="{ibapi_url}" target="_blank" style="background: #1D4ED8; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 30px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(29,78,216,0.3);" title="Search official Bank e-Auctions on Indian Banks Association portal">🏦 IBAPI Bank Auctions ↗</a>
+<a href="{google_search_url}" target="_blank" style="background: #475569; color: white; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; min-height: 30px; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgba(71,85,105,0.3);" title="Search Google for authentic notices and gazette records">🔍 Google Search ↗</a>
+</div>
 </div>
 </div>
 <div style="font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
@@ -415,16 +429,24 @@ def render_seller_contact_card_html(item: Dict[str, Any]) -> str:
 
     raw_html = f"""
 <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);">
+<div style="background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 11.5px; color: #92400E; line-height: 1.5;">
+⚠️ <b>Prototype Notice — Simulated Contact Details:</b><br/>
+Mobile numbers in this research demonstration catalog are simulated placeholders for developer privacy. For genuine land purchases or bank auctions, do not attempt to call these mock numbers. Instead, enquire directly via the official portals below:
+<div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+<a href="https://ibapi.in/sale_info_home.aspx" target="_blank" style="background: #1D4ED8; color: white; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">🏦 IBAPI Official Bank Auctions ↗</a>
+<a href="https://upbhulekh.gov.in/public/public_ror/action/public_action.jsp" target="_blank" style="background: #047857; color: white; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">🏛️ UP Bhulekh Khatauni ↗</a>
+</div>
+</div>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 4px;">
 <div>
 <div style="color: #0F172A; font-weight: 800; font-size: 14px;">{person}</div>
 <div style="color: #64748B; font-size: 11.5px; font-weight: 600;">{item.get('seller_category', 'Direct Landowner / Farmer')}</div>
 </div>
-<div style="color: #0284C7; font-weight: 800; font-size: 14px;">{phone}</div>
+<div style="color: #64748B; font-weight: 700; font-size: 13px;">{phone} <span style="font-size: 11px; color: #94A3B8;">(Demo)</span></div>
 </div>
 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-<a href="tel:{clean_p}" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #2563EB; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">📞 Call Seller</a>
-<a href="{wa_link}" target="_blank" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #059669; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(5,150,105,0.3);">💬 WhatsApp Chat</a>
+<a href="tel:{clean_p}" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #64748B; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(100,116,139,0.3);">📞 Call Seller (Demo)</a>
+<a href="{wa_link}" target="_blank" style="flex: 1 1 120px; min-height: 44px; text-align: center; background: #059669; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(5,150,105,0.3);">💬 WhatsApp (Demo)</a>
 </div>
 </div>
 """

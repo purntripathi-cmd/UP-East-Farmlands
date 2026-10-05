@@ -1152,6 +1152,48 @@ def test_google_maps_terrain_default_click_zoom_and_default_location_button(samp
     assert 'on_click=clear_pinned_coord_callback' in code
 
 
+def test_legal_due_diligence_official_verification_links_and_bank_enquiry_manual():
+    """Verifies that legal audit cards and seller cards contain official UP Bhulekh, IBAPI, and Google Search links."""
+    from utils.farmland_view import render_legal_and_news_card_html, render_seller_contact_card_html
+    sample = {
+        "id": "test_farm_001",
+        "name": "Lohta Agroforestry",
+        "regional_district": "Varanasi",
+        "location": "Lohta Rural Perimeter",
+        "khasra_khatauni_number": "Khatauni #00319, Khasra 112/3",
+        "published_news_title": "Varanasi Gazette: Clean Title",
+        "published_news_source": "Dainik Jagran",
+        "published_news_url": "https://epaper.jagran.com/",
+        "published_news_date": "04 Oct 2026",
+        "contact_person": "Dinesh Kumar Yadav",
+        "contact_phone": "+91 94511 67230"
+    }
+
+    legal_html = render_legal_and_news_card_html(sample)
+    assert "upbhulekh.gov.in" in legal_html
+    assert "ibapi.in" in legal_html
+    assert "google.com/search" in legal_html
+    assert "Verify Link ↗" in legal_html
+    assert "🏛️ UP Bhulekh ↗" in legal_html
+    assert "🏦 IBAPI Bank Auctions ↗" in legal_html
+    assert "🔍 Google Search ↗" in legal_html
+
+    seller_html = render_seller_contact_card_html(sample)
+    assert "Prototype Notice" in seller_html
+    assert "ibapi.in" in seller_html
+    assert "upbhulekh.gov.in" in seller_html
+    assert "(Demo)" in seller_html
+
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    assert "Official Land Due Diligence & Bank Auction Enquiry Manual" in app_code
+    assert "ibapi.in" in app_code
+    assert "upbhulekh.gov.in" in app_code
+
+
+
 
 
 
