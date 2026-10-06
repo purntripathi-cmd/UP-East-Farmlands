@@ -156,6 +156,21 @@ def is_source_excluded(
     if channel and channel in excluded:
         return True
 
+    # Case-insensitive & normalized matching
+    s_lower = s_name.lower()
+    news_lower = news_s.lower()
+    channel_lower = channel.lower()
+
+    for k in excluded:
+        k_clean = str(k).strip().lower()
+        if not k_clean:
+            continue
+        if k_clean == s_lower or k_clean == news_lower or k_clean == channel_lower:
+            return True
+        # Specific mission matching for Purvanchal Agro-Forestry / Sandalwood Mission
+        if ("purvanchal agro-forestry" in k_clean or "sandalwood mission" in k_clean) and ("purvanchal agro-forestry" in news_lower or "sandalwood mission" in news_lower):
+            return True
+
     return False
 
 
@@ -228,6 +243,100 @@ def build_sources_registry(
 
     # Sort: active first, then by parcel count descending
     registry.sort(key=lambda x: (x["is_excluded"], -x["parcel_count"], x["source_name"]))
+    return registry
+
+
+def is_news_source_excluded(
+    news_source_name: str,
+    excluded_dict: Optional[Dict[str, Dict[str, Any]]] = None
+) -> bool:
+    """Checks whether a specific published news platform is excluded."""
+    excluded = excluded_dict if excluded_dict is not None else load_excluded_sources()
+    if not excluded:
+        return False
+    target = str(news_source_name).strip().lower()
+    for k in excluded:
+        k_clean = str(k).strip().lower()
+        if k_clean == target:
+            return True
+        if ("purvanchal agro-forestry" in k_clean or "sandalwood mission" in k_clean) and ("purvanchal agro-forestry" in target or "sandalwood mission" in target):
+            return True
+    return False
+
+
+def build_news_sources_registry(
+    all_parcels: List[Dict[str, Any]],
+    excluded_dict: Optional[Dict[str, Dict[str, Any]]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Builds an aggregated registry of all unique Published News Platforms / Gazettes
+    found across all farmland parcels.
+    Returns sorted list of news platform summary dictionaries.
+    """
+    excluded = excluded_dict if excluded_dict is not None else load_excluded_sources()
+    news_map: Dict[str, Dict[str, Any]] = {}
+
+    for p in all_parcels:
+        news_s = str(p.get("published_news_source", "General Notice")).strip()
+        if not news_s:
+            continue
+        sname = str(p.get("source_name", "Unknown Source")).strip()
+        s_url = str(p.get("published_news_url") or p.get("source_url", "")).strip()
+        dist = str(p.get("regional_district", "Varanasi")).strip()
+        score = float(p.get("due_diligence_score", 90))
+        price = float(p.get("price_per_acre_lakhs", 0.0))
+        channel = classify_source_channel(sname, news_s, s_url)
+
+        if news_s not in news_map:
+            news_map[news_s] = {
+                "news_source": news_s,
+                "sample_url": s_url,
+                "parcel_count": 0,
+                "districts": set(),
+                "sample_parcels": [],
+                "channels": set(),
+                "scores": [],
+                "prices": []
+            }
+
+        entry = news_map[news_s]
+        entry["parcel_count"] += 1
+        entry["districts"].add(dist)
+        entry["channels"].add(channel)
+        entry["scores"].append(score)
+        entry["prices"].append(price)
+        if len(entry["sample_parcels"]) < 3:
+            entry["sample_parcels"].append(f"{p.get('name', 'Parcel')} ({dist})")
+
+    registry = []
+    for news_s, info in news_map.items():
+        is_ex = is_news_source_excluded(news_s, excluded)
+        ex_info = None
+        for k, v in excluded.items():
+            k_clean = str(k).strip().lower()
+            if k_clean == news_s.lower() or (("purvanchal agro-forestry" in k_clean or "sandalwood mission" in k_clean) and ("purvanchal agro-forestry" in news_s.lower() or "sandalwood mission" in news_s.lower())):
+                ex_info = v
+                break
+
+        avg_score = round(sum(info["scores"]) / len(info["scores"]), 1) if info["scores"] else 90.0
+        avg_price = round(sum(info["prices"]) / len(info["prices"]), 1) if info["prices"] else 0.0
+
+        registry.append({
+            "news_source": news_s,
+            "sample_url": info["sample_url"],
+            "parcel_count": info["parcel_count"],
+            "districts": sorted(list(info["districts"])),
+            "districts_display": ", ".join(sorted(list(info["districts"]))),
+            "channels_display": ", ".join(sorted(list(info["channels"]))),
+            "sample_parcels_display": " • ".join(info["sample_parcels"]),
+            "avg_due_diligence_score": avg_score,
+            "avg_price_acre": avg_price,
+            "is_excluded": is_ex,
+            "exclusion_reason": ex_info.get("reason", "") if ex_info else "",
+            "exclusion_date": ex_info.get("excluded_at", "") if ex_info else ""
+        })
+
+    registry.sort(key=lambda x: (x["is_excluded"], -x["parcel_count"], x["news_source"]))
     return registry
 
 

@@ -1347,6 +1347,76 @@ def test_app_tab1_1click_bank_auction_exclusion_integration():
     assert "Stressed Assets Excluded" in app_code
 
 
+def test_purvanchal_agroforestry_mission_exclusion():
+    """Verifies registry indexing and selective exclusion of Purvanchal Agro-Forestry & Sandalwood Mission."""
+    from utils.source_exclusion_manager import (
+        build_news_sources_registry,
+        is_news_source_excluded,
+        is_source_excluded,
+        exclude_source,
+        restore_source,
+        load_excluded_sources
+    )
+
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "up_east_farmlands.json")
+    with open(data_path, "r", encoding="utf-8") as f:
+        parcels = json.load(f)
+
+    # 1. Verify news registry aggregates the mission with exactly 15 parcels
+    reg = build_news_sources_registry(parcels, {})
+    mission_entry = next((n for n in reg if n["news_source"] == "Purvanchal Agro-Forestry & Sandalwood Mission"), None)
+    assert mission_entry is not None, "Purvanchal Agro-Forestry Mission not found in news registry"
+    assert mission_entry["parcel_count"] == 15, f"Expected 15 parcels for mission, found {mission_entry['parcel_count']}"
+    assert mission_entry["is_excluded"] is False
+
+    # 2. Test exclusion logic
+    excluded_test = {"Purvanchal Agro-Forestry & Sandalwood Mission": {"reason": "Test", "date": "2026-10-06", "type": "published_news_source"}}
+    assert is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", excluded_test) is True
+    assert is_news_source_excluded("Dainik Jagran Varanasi Edition", excluded_test) is False
+
+    # 3. Test filtering effect across all parcels
+    matching_parcels = [p for p in parcels if is_source_excluded(p, excluded_test)]
+    assert len(matching_parcels) == 15, f"Expected exactly 15 parcels filtered out, got {len(matching_parcels)}"
+
+    # 4. Test persistence roundtrip
+    exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Testing unit test", source_type="published_news_source")
+    loaded = load_excluded_sources()
+    assert is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", loaded) is True
+    restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+    loaded_after = load_excluded_sources()
+    assert is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", loaded_after) is False
+
+
+def test_app_purvanchal_agroforestry_mission_integration():
+    """Verifies that app.py surfaces Purvanchal Agro-Forestry Mission exclusion controls across Tab 1, 4, 6 and Sidebar."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    # Sidebar checkbox
+    assert "sb_chk_exclude_mission" in app_code
+    assert "Exclude Agro-Forestry Mission" in app_code
+
+    # Tab 1 quick controls
+    assert "btn_t1_exclude_mission" in app_code
+    assert "btn_t1_include_mission" in app_code
+    assert "btn_tab1_exclude_mission_table" in app_code
+    assert "btn_tab1_include_mission_table" in app_code
+
+    # Tab 4 news controls
+    assert "btn_t4_exclude_mission" in app_code
+    assert "btn_t4_include_mission" in app_code
+    assert "btn_t4_ex_" in app_code
+    assert "btn_t4_rest_" in app_code
+
+    # Tab 6 spotlight & news selector
+    assert "btn_spotlight_exclude_mission" in app_code
+    assert "btn_spotlight_restore_mission" in app_code
+    assert "sb_sel_news_to_exclude" in app_code
+    assert "btn_do_exclude_news" in app_code
+    assert "build_news_sources_registry" in app_code
+
+
 
 
 

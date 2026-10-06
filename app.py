@@ -88,9 +88,11 @@ from utils.source_exclusion_manager import (
     restore_all_sources,
     is_source_excluded,
     build_sources_registry,
+    build_news_sources_registry,
     get_channel_summaries,
     classify_source_channel,
-    is_bank_eauction_or_stressed_asset
+    is_bank_eauction_or_stressed_asset,
+    is_news_source_excluded
 )
 from utils.github_ai_agent import (
     query_farmland_agent,
@@ -1086,6 +1088,23 @@ chk_exclude_bank_sb = st.sidebar.checkbox(
 )
 st.session_state["exclude_bank_auctions"] = chk_exclude_bank_sb
 
+# Purvanchal Agro-Forestry & Sandalwood Mission Exclusion Filter
+is_mission_sb_ex = is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", st.session_state["excluded_sources"])
+mission_total_count = sum(1 for p in all_parcels if "purvanchal agro-forestry" in str(p.get("published_news_source", "")).lower() or "sandalwood mission" in str(p.get("published_news_source", "")).lower())
+chk_exclude_mission_sb = st.sidebar.checkbox(
+    f"🚫 Exclude Agro-Forestry Mission ({mission_total_count})",
+    value=is_mission_sb_ex,
+    key="sb_chk_exclude_mission",
+    help="Exclude all 15 parcels published under 'Purvanchal Agro-Forestry & Sandalwood Mission' across all maps, dossiers, and ledgers."
+)
+if chk_exclude_mission_sb != is_mission_sb_ex:
+    if chk_exclude_mission_sb:
+        exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Excluded via sidebar filter", source_type="published_news_source")
+    else:
+        restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+    st.session_state["excluded_sources"] = load_excluded_sources()
+    st.rerun()
+
 # 6. Caste Category & Section 98 UP Revenue Code Filter
 caste_filter = st.sidebar.selectbox(
     "⚖️ Landowner Caste & Sec 98 Filter:",
@@ -1394,32 +1413,52 @@ with view_tabs[0]:
         )
 
     # -----------------------------------------------------------------
-    # SINGLE-CLICK TOGGLE: EXCLUDE BANK E-AUCTIONS & STRESSED ASSETS
+    # SINGLE-CLICK TOGGLES: EXCLUDE BANK E-AUCTIONS & PURVANCHAL MISSION
     # -----------------------------------------------------------------
     is_bank_excluded = st.session_state.get("exclude_bank_auctions", False)
     bank_total_pool = sum(1 for p in all_parcels if is_bank_eauction_or_stressed_asset(p))
 
+    is_mission_excluded = is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", st.session_state.get("excluded_sources", {}))
+    mission_total_pool = sum(1 for p in all_parcels if "purvanchal agro-forestry" in str(p.get("published_news_source", "")).lower() or "sandalwood mission" in str(p.get("published_news_source", "")).lower())
+
     st.markdown("---")
-    t1_qbar1, t1_qbar2 = st.columns([3.4, 1.6])
+    t1_qbar1, t1_qbar2, t1_qbar3 = st.columns([2.6, 1.2, 1.2])
     with t1_qbar1:
+        status_msgs = []
         if is_bank_excluded:
+            status_msgs.append(f"🛡️ **Stressed Assets Excluded ({bank_total_pool} Bank Auctions)**")
+        if is_mission_excluded:
+            status_msgs.append(f"🌿 **{mission_total_pool} Agro-Forestry Mission Excluded**")
+
+        if status_msgs:
             st.info(
-                f"🛡️ **Stressed Assets Excluded:** **{bank_total_pool}** Bank SARFAESI e-auctions & distressed listings filtered out. "
-                f"Now browsing **Direct Landowner / Farmer** & **Verified Private Portals** (99acres, MagicBricks, RealEstateIndia, OLX, SFarmsIndia)."
+                f"{' • '.join(status_msgs)}. "
+                f"Browsing verified direct landowner and private listings."
             )
         else:
             st.caption(
                 f"🏛️ **Asset Sourcing Overview:** Full inventory active ({len(all_parcels)} parcels) including **{bank_total_pool}** Bank SARFAESI / IBAPI e-auctions. "
-                f"Click the 1-click button on the right to exclude all bank recovery & stressed assets."
+                f"Use 1-click filters to exclude bank recovery auctions or specific published news platforms."
             )
     with t1_qbar2:
         if is_bank_excluded:
-            if st.button("✅ 1-Click: Include Bank E-Auctions", key="btn_t1_include_bank_auctions", type="primary", use_container_width=True, help="Re-include all Bank SARFAESI e-auctions and recovery assets into map and ledger"):
+            if st.button("✅ Include Bank Auctions", key="btn_t1_include_bank_auctions", type="primary", use_container_width=True, help="Re-include all Bank SARFAESI e-auctions and recovery assets"):
                 st.session_state["exclude_bank_auctions"] = False
                 st.rerun()
         else:
-            if st.button("🚫 1-Click: Exclude Bank E-Auctions", key="btn_t1_exclude_bank_auctions", type="secondary", use_container_width=True, help="1-Click: Exclude all Bank SARFAESI e-auctions, recovery notices, and stressed assets"):
+            if st.button("🚫 Exclude Bank Auctions", key="btn_t1_exclude_bank_auctions", type="secondary", use_container_width=True, help="1-Click: Exclude all Bank SARFAESI e-auctions, recovery notices, and stressed assets"):
                 st.session_state["exclude_bank_auctions"] = True
+                st.rerun()
+    with t1_qbar3:
+        if is_mission_excluded:
+            if st.button("✅ Include Mission (15)", key="btn_t1_include_mission", type="primary", use_container_width=True, help="Re-include Purvanchal Agro-Forestry & Sandalwood Mission parcels"):
+                restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+        else:
+            if st.button("🚫 Exclude Mission (15)", key="btn_t1_exclude_mission", type="secondary", use_container_width=True, help="1-Click: Exclude all 15 parcels citing Purvanchal Agro-Forestry & Sandalwood Mission"):
+                exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Excluded via 1-click filter", source_type="published_news_source")
+                st.session_state["excluded_sources"] = load_excluded_sources()
                 st.rerun()
 
     st.markdown(f"### 🗺️ Google Maps Terrain & Satellite Intelligence with Concentric Buffers")
@@ -1745,7 +1784,7 @@ with view_tabs[0]:
     # PROPERTY SUMMARY TABLE IN TAB 1 (FILTERABLE BY DISTRICT)
     # -------------------------------------------------------------
     st.markdown("---")
-    col_tab1_h1, col_tab1_h2, col_tab1_h3 = st.columns([2.8, 1.4, 1.0])
+    col_tab1_h1, col_tab1_h2, col_tab1_h3, col_tab1_h4 = st.columns([2.4, 1.3, 1.4, 0.9])
     with col_tab1_h1:
         st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
     with col_tab1_h2:
@@ -1758,6 +1797,17 @@ with view_tabs[0]:
                 st.session_state["exclude_bank_auctions"] = True
                 st.rerun()
     with col_tab1_h3:
+        if is_mission_excluded:
+            if st.button("✅ Include Mission", key="btn_tab1_include_mission_table", use_container_width=True, help="Include Purvanchal Agro-Forestry Mission parcels in table"):
+                restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+        else:
+            if st.button("🚫 Exclude Mission (15)", key="btn_tab1_exclude_mission_table", use_container_width=True, help="1-Click: Exclude Purvanchal Agro-Forestry Mission parcels from table"):
+                exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Excluded via table quick filter", source_type="published_news_source")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+    with col_tab1_h4:
         if st.button("🔄 Refresh Data", key="btn_tab1_refresh_data", use_container_width=True):
             with st.spinner("Refreshing farmland inventory, satellite telemetry, and road routing..."):
                 st.cache_data.clear()
@@ -2331,18 +2381,42 @@ with view_tabs[3]:
     st.markdown("### 📰 Published News, E-Auctions & Legal Caveats")
     st.caption("Verified public notices published in leading newspapers, SARFAESI bank recovery bulletins, and UP Bhulekh revenue gazettes.")
 
+    is_mission_t4_ex = is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", st.session_state.get("excluded_sources", {}))
+    mission_total_t4 = sum(1 for p in all_parcels if "purvanchal agro-forestry" in str(p.get("published_news_source", "")).lower() or "sandalwood mission" in str(p.get("published_news_source", "")).lower())
+
+    t4_bar_c1, t4_bar_c2 = st.columns([3.2, 1.8])
+    with t4_bar_c1:
+        if is_mission_t4_ex:
+            st.info(f"🌿 **Purvanchal Agro-Forestry & Sandalwood Mission is currently excluded.** All {mission_total_t4} associated notices are hidden from view.")
+        else:
+            st.caption(f"Showing notices from active published news platforms ({len(filtered_parcels)} parcels). Click right to exclude specific missions.")
+    with t4_bar_c2:
+        if is_mission_t4_ex:
+            if st.button("✅ Include Agro-Forestry Mission", key="btn_t4_include_mission", type="primary", use_container_width=True):
+                restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+        else:
+            if st.button(f"🚫 Exclude Agro-Forestry Mission ({mission_total_t4})", key="btn_t4_exclude_mission", type="secondary", use_container_width=True, help="1-Click: Exclude Purvanchal Agro-Forestry & Sandalwood Mission notices"):
+                exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Excluded via Tab 4 quick filter", source_type="published_news_source")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+
+    st.markdown("---")
+
     if filtered_parcels:
         for p in filtered_parcels[:25]:
             pid = str(p.get("id"))
-            r = routings[pid]
+            r = routings.get(pid, {})
             news_title = p.get("published_news_title")
-            news_src = p.get("published_news_source")
+            news_src = str(p.get("published_news_source", "")).strip()
             news_date = p.get("published_news_date")
             news_url = p.get("published_news_url")
             notice_type = p.get("notice_or_legal_type")
+            is_card_src_ex = is_news_source_excluded(news_src, st.session_state.get("excluded_sources", {}))
 
             news_card_html = f"""
-<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+<div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
 <span style="color: #B45309; font-weight: 800; font-size: 13px;">📰 {news_src}</span>
 <span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid #FCD34D;">{notice_type}</span>
@@ -2358,6 +2432,22 @@ with view_tabs[3]:
 </div>
 """
             render_html_block(news_card_html)
+
+            # 1-Click Platform Exclusion action below each card
+            act_col1, act_col2 = st.columns([3.5, 1.5])
+            with act_col2:
+                short_src = news_src[:22] + "..." if len(news_src) > 22 else news_src
+                if is_card_src_ex:
+                    if st.button(f"✅ Restore '{short_src}'", key=f"btn_t4_rest_{pid}", use_container_width=True):
+                        restore_source(news_src)
+                        st.session_state["excluded_sources"] = load_excluded_sources()
+                        st.rerun()
+                else:
+                    if st.button(f"🚫 Exclude '{short_src}'", key=f"btn_t4_ex_{pid}", use_container_width=True, help=f"Exclude all notices from {news_src}"):
+                        exclude_source(news_src, reason=f"Flagged via Tab 4 Notice Card ({pid})", source_type="published_news_source")
+                        st.session_state["excluded_sources"] = load_excluded_sources()
+                        st.rerun()
+            st.write("")
     else:
         st.info("No published notices available.")
 
@@ -2514,24 +2604,28 @@ with view_tabs[4]:
 # -------------------------------------------------------------
 with view_tabs[5]:
     st.markdown("### 🌐 Farmland Data Sources & Quality Control Hub")
-    st.caption("Audit all origin registries, bank distress recovery portals, e-paper gazettes, and private agro-portals. Exclude specific sources or entire sourcing channels if data is found outdated, phone numbers are invalid, or records are non-verifiable.")
+    st.caption("Audit all origin registries, bank distress recovery portals, e-paper gazettes, and private agro-portals. Exclude specific sources, published news platforms, or entire sourcing channels if data is found outdated, phone numbers are invalid, or records are non-verifiable.")
 
-    # Compute Source Registry and Summaries
+    # Compute Source Registry, News Registry and Channel Summaries
     sources_registry = build_sources_registry(all_parcels, st.session_state["excluded_sources"])
+    news_registry = build_news_sources_registry(all_parcels, st.session_state["excluded_sources"])
     channel_summaries = get_channel_summaries(sources_registry)
     total_sources_count = len(sources_registry)
+    total_news_count = len(news_registry)
     excluded_sources_count = sum(1 for s in sources_registry if s["is_excluded"])
+    excluded_news_count = sum(1 for n in news_registry if n["is_excluded"])
     active_sources_count = total_sources_count - excluded_sources_count
-    excluded_parcels_count = sum(s["parcel_count"] for s in sources_registry if s["is_excluded"])
+    active_news_count = total_news_count - excluded_news_count
+    total_excluded_parcels = sum(1 for p in all_parcels if is_source_excluded(p, st.session_state["excluded_sources"]))
 
     # 1. Top Metrics Bar
     src_kpi1, src_kpi2, src_kpi3, src_kpi4 = st.columns(4)
     with src_kpi1:
-        st.metric("Total Sourcing Entities", total_sources_count, help="Unique platforms, revenue portals, and channels")
+        st.metric("Total Sourcing Entities", f"{total_sources_count} Portals + {total_news_count} News", help="Unique portals, revenue registries, and published news platforms")
     with src_kpi2:
-        st.metric("🟢 Active Included", active_sources_count, f"{round(active_sources_count / total_sources_count * 100, 1)}% of registry")
+        st.metric("🟢 Active Included", f"{active_sources_count + active_news_count} Active", f"{round((active_sources_count + active_news_count) / (total_sources_count + total_news_count) * 100, 1)}% of registry")
     with src_kpi3:
-        st.metric("🚫 Excluded (Outdated/Wrong)", excluded_sources_count, f"{excluded_parcels_count} parcels filtered out")
+        st.metric("🚫 Excluded Entities", f"{len(st.session_state.get('excluded_sources', {}))}", f"{total_excluded_parcels} parcels filtered out")
     with src_kpi4:
         status_badge = "✅ Filter Active (Hidden)" if not st.session_state.get("show_excluded_sources", False) else "⚠️ Filter Suspended (Shown)"
         st.metric("Global View Status", status_badge)
@@ -2553,16 +2647,59 @@ with view_tabs[5]:
             st.session_state["excluded_sources"] = load_excluded_sources()
             st.rerun()
     with src_c3:
-        if excluded_sources_count > 0:
+        if len(st.session_state.get("excluded_sources", {})) > 0:
             if st.button("↩️ Restore All Sources", key="btn_restore_all_sources", type="secondary", use_container_width=True):
                 restore_all_sources()
                 st.session_state["excluded_sources"] = load_excluded_sources()
-                st.success("✅ All sources restored to active inventory!")
+                st.success("✅ All sources and published news platforms restored to active inventory!")
                 st.rerun()
 
     st.markdown("---")
 
-    # 3. Channel-Level Quality Overview & Quick Bulk Actions
+    # 3. Dedicated Spotlight Card: Purvanchal Agro-Forestry & Sandalwood Mission
+    is_mission_ex_tab6 = is_news_source_excluded("Purvanchal Agro-Forestry & Sandalwood Mission", st.session_state["excluded_sources"])
+    mission_parcels_tab6 = sum(1 for p in all_parcels if "purvanchal agro-forestry" in str(p.get("published_news_source", "")).lower() or "sandalwood mission" in str(p.get("published_news_source", "")).lower())
+
+    m_bg = "#FEF2F2" if is_mission_ex_tab6 else "#F0FDF4"
+    m_border = "#F87171" if is_mission_ex_tab6 else "#86EFAC"
+    m_badge_txt = "🚫 EXCLUDED (Hidden across Maps, Dossiers & Ledgers)" if is_mission_ex_tab6 else "🟢 ACTIVE (Included in Discovery Feed)"
+    m_badge_col = "#DC2626" if is_mission_ex_tab6 else "#16A34A"
+
+    st.markdown(f"""
+<div style="background: {m_bg}; border: 1.5px solid {m_border}; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+<div>
+<span style="font-size: 16px; font-weight: 800; color: #0F172A;">🌿 Purvanchal Agro-Forestry & Sandalwood Mission</span>
+<span style="background: white; border: 1px solid {m_border}; color: {m_badge_col}; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-left: 8px;">{m_badge_txt}</span>
+<div style="font-size: 12.5px; color: #475569; margin-top: 6px;">
+Published News Platform cited on <b>{mission_parcels_tab6} farmland parcels</b> across Varanasi, Chandauli, Jaunpur, Azamgarh, Buxar, Rohtas, Sonbhadra, and Singrauli.
+</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+    sp_col1, sp_col2 = st.columns([3.5, 1.5])
+    with sp_col1:
+        if is_mission_ex_tab6:
+            st.info(f"🛡️ All **{mission_parcels_tab6}** parcels under Purvanchal Agro-Forestry & Sandalwood Mission are currently **excluded** from your search, maps, dossiers, and ledgers.")
+        else:
+            st.caption(f"Click the button to instantly exclude all **{mission_parcels_tab6}** parcels published under Purvanchal Agro-Forestry & Sandalwood Mission if data or plantation schemes are outdated.")
+    with sp_col2:
+        if is_mission_ex_tab6:
+            if st.button("✅ Restore Mission Parcels", key="btn_spotlight_restore_mission", type="primary", use_container_width=True):
+                restore_source("Purvanchal Agro-Forestry & Sandalwood Mission")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+        else:
+            if st.button(f"🚫 Exclude Mission ({mission_parcels_tab6})", key="btn_spotlight_exclude_mission", type="secondary", use_container_width=True):
+                exclude_source("Purvanchal Agro-Forestry & Sandalwood Mission", reason="Excluded via Published News Platform Spotlight", source_type="published_news_source")
+                st.session_state["excluded_sources"] = load_excluded_sources()
+                st.rerun()
+
+    st.markdown("---")
+
+    # 4. Channel-Level Quality Overview & Quick Bulk Actions
     with st.expander("🏢 Sourcing Channels & Bulk Quality Controls", expanded=True):
         st.markdown("#### High-Level Sourcing Channels")
         st.caption("Exclude an entire channel with one click if all data from that tier (e.g. Social Media video walkthroughs or Private Portals) is deemed unverified or outdated.")
@@ -2599,123 +2736,233 @@ with view_tabs[5]:
                         st.rerun()
             st.divider()
 
-    # 4. Interactive Exclusion Tool for Individual Sources
+    # 5. Interactive Exclusion Tool for Individual Sources & News Platforms
     st.markdown("#### 🚫 Exclude a Specific Source (Outdated / Incorrect Data)")
-    st.caption("Select any individual source below to remove all its associated farmlands from the active map, dossier, comparison ledger, and news notices.")
+    st.caption("Select any individual portal or published news platform below to remove all its associated farmlands from the active map, dossier, comparison ledger, and news notices.")
 
-    active_sources_options = [s["source_name"] for s in sources_registry if not s["is_excluded"]]
-    if active_sources_options:
-        ex_form_c1, ex_form_c2, ex_form_c3 = st.columns([2.5, 2.0, 1.5])
-        with ex_form_c1:
-            sel_source_to_exclude = st.selectbox(
-                "Select Source to Exclude:",
-                options=active_sources_options,
-                key="sb_sel_source_to_exclude",
-                format_func=lambda x: f"{x} ({next((s['parcel_count'] for s in sources_registry if s['source_name'] == x), 0)} parcels)"
-            )
-        with ex_form_c2:
-            sel_reason = st.selectbox(
-                "Reason for Exclusion:",
-                options=[
-                    "All data / contact details from this source found outdated",
-                    "Incorrect / non-functional mobile numbers (demo placeholders)",
-                    "Unverified land title claims / revenue discrepancy",
-                    "Expired SARFAESI auction notice or sold out",
-                    "Unverified broker intermediary / questionable pricing",
-                    "Other (Custom Reason)"
-                ],
-                key="sb_sel_exclusion_reason"
-            )
-            custom_reason = ""
-            if sel_reason == "Other (Custom Reason)":
-                custom_reason = st.text_input("Specify custom reason:", key="txt_custom_exclusion_reason")
-        with ex_form_c3:
-            st.write("")
-            st.write("")
-            if st.button("🚫 Exclude Source Now", key="btn_do_exclude_source", type="primary", use_container_width=True):
-                final_reason = custom_reason.strip() if sel_reason == "Other (Custom Reason)" and custom_reason.strip() else sel_reason
-                exclude_source(sel_source_to_exclude, reason=final_reason, source_type="source_name")
-                st.session_state["excluded_sources"] = load_excluded_sources()
-                st.error(f"🚫 Excluded '{sel_source_to_exclude}'! Associated parcels filtered from inventory.")
-                st.rerun()
+    src_category_choice = st.radio(
+        "Choose Entity Category to Exclude:",
+        options=[
+            f"🏢 Sourcing Platforms & Portals ({total_sources_count})",
+            f"📰 Published News Platforms & Gazettes ({total_news_count})"
+        ],
+        horizontal=True,
+        key="rb_source_exclusion_category"
+    )
+
+    if "Published News Platforms" in src_category_choice:
+        active_news_options = [n["news_source"] for n in news_registry if not n["is_excluded"]]
+        if active_news_options:
+            ex_form_c1, ex_form_c2, ex_form_c3 = st.columns([2.5, 2.0, 1.5])
+            with ex_form_c1:
+                sel_news_to_exclude = st.selectbox(
+                    "Select Published News Platform to Exclude:",
+                    options=active_news_options,
+                    key="sb_sel_news_to_exclude",
+                    format_func=lambda x: f"{x} ({next((n['parcel_count'] for n in news_registry if n['news_source'] == x), 0)} parcels)"
+                )
+            with ex_form_c2:
+                sel_news_reason = st.selectbox(
+                    "Reason for Exclusion:",
+                    options=[
+                        "Outdated agro-forestry / plantation mission or schemes",
+                        "Non-verifiable gazette notice or publication link",
+                        "All data / contact details from this platform found outdated",
+                        "Duplicate / obsolete public caveat listing",
+                        "Other (Custom Reason)"
+                    ],
+                    key="sb_sel_news_exclusion_reason"
+                )
+                custom_news_reason = ""
+                if sel_news_reason == "Other (Custom Reason)":
+                    custom_news_reason = st.text_input("Specify custom reason:", key="txt_custom_news_exclusion_reason")
+            with ex_form_c3:
+                st.write("")
+                st.write("")
+                if st.button("🚫 Exclude News Platform Now", key="btn_do_exclude_news", type="primary", use_container_width=True):
+                    final_n_reason = custom_news_reason.strip() if sel_news_reason == "Other (Custom Reason)" and custom_news_reason.strip() else sel_news_reason
+                    exclude_source(sel_news_to_exclude, reason=final_n_reason, source_type="published_news_source")
+                    st.session_state["excluded_sources"] = load_excluded_sources()
+                    st.error(f"🚫 Excluded news platform '{sel_news_to_exclude}'! Associated parcels filtered from inventory.")
+                    st.rerun()
+        else:
+            st.info("All published news platforms are currently excluded. Restore them from the list below if needed.")
     else:
-        st.info("All sources are currently excluded. Click 'Restore All Sources' above to restore them.")
+        active_sources_options = [s["source_name"] for s in sources_registry if not s["is_excluded"]]
+        if active_sources_options:
+            ex_form_c1, ex_form_c2, ex_form_c3 = st.columns([2.5, 2.0, 1.5])
+            with ex_form_c1:
+                sel_source_to_exclude = st.selectbox(
+                    "Select Sourcing Platform to Exclude:",
+                    options=active_sources_options,
+                    key="sb_sel_source_to_exclude",
+                    format_func=lambda x: f"{x} ({next((s['parcel_count'] for s in sources_registry if s['source_name'] == x), 0)} parcels)"
+                )
+            with ex_form_c2:
+                sel_reason = st.selectbox(
+                    "Reason for Exclusion:",
+                    options=[
+                        "All data / contact details from this source found outdated",
+                        "Incorrect / non-functional mobile numbers (demo placeholders)",
+                        "Unverified land title claims / revenue discrepancy",
+                        "Expired SARFAESI auction notice or sold out",
+                        "Unverified broker intermediary / questionable pricing",
+                        "Other (Custom Reason)"
+                    ],
+                    key="sb_sel_exclusion_reason"
+                )
+                custom_reason = ""
+                if sel_reason == "Other (Custom Reason)":
+                    custom_reason = st.text_input("Specify custom reason:", key="txt_custom_exclusion_reason")
+            with ex_form_c3:
+                st.write("")
+                st.write("")
+                if st.button("🚫 Exclude Source Now", key="btn_do_exclude_source", type="primary", use_container_width=True):
+                    final_reason = custom_reason.strip() if sel_reason == "Other (Custom Reason)" and custom_reason.strip() else sel_reason
+                    exclude_source(sel_source_to_exclude, reason=final_reason, source_type="source_name")
+                    st.session_state["excluded_sources"] = load_excluded_sources()
+                    st.error(f"🚫 Excluded '{sel_source_to_exclude}'! Associated parcels filtered from inventory.")
+                    st.rerun()
+        else:
+            st.info("All sources are currently excluded. Click 'Restore All Sources' above to restore them.")
 
-    # 5. Currently Excluded Sources List (if any)
-    if excluded_sources_count > 0:
-        st.markdown(f"#### ⚠️ Currently Excluded Sources ({excluded_sources_count} Sources • {excluded_parcels_count} Farmlands Filtered)")
-        for ex_src in [s for s in sources_registry if s["is_excluded"]]:
+    # 6. Currently Excluded Sources List (if any)
+    curr_excluded_map = st.session_state.get("excluded_sources", {})
+    if curr_excluded_map:
+        st.markdown(f"#### ⚠️ Currently Excluded Sources ({len(curr_excluded_map)} Excluded Entities • {total_excluded_parcels} Farmlands Filtered)")
+        for ex_key, ex_meta in curr_excluded_map.items():
             ex_c1, ex_c2, ex_c3 = st.columns([3.5, 1.5, 1.0])
+            src_type_label = ex_meta.get("type", "source")
+            type_badge = "📰 News Platform" if src_type_label == "published_news_source" else ("🏢 Channel" if src_type_label == "channel" else "🌐 Sourcing Portal")
+            
+            # Find affected parcels count
+            parcels_affected = sum(1 for p in all_parcels if (
+                p.get("source_name") == ex_key or
+                p.get("published_news_source") == ex_key or
+                classify_source_channel(p.get("source_name", ""), p.get("source_url", "")) == ex_key or
+                (ex_key == "Purvanchal Agro-Forestry & Sandalwood Mission" and ("purvanchal agro-forestry" in str(p.get("published_news_source", "")).lower() or "sandalwood mission" in str(p.get("published_news_source", "")).lower()))
+            ))
+
             with ex_c1:
                 st.markdown(
-                    f"**{ex_src['source_name']}**  \n"
-                    f"<span style='color: #B91C1C; font-size: 12px;'>Reason: {ex_src['exclusion_reason']}</span> • "
-                    f"<span style='color: #64748B; font-size: 11.5px;'>Excluded on: {ex_src['exclusion_date']}</span>  \n"
-                    f"<span style='color: #475569; font-size: 12px;'>Channel: {ex_src['source_channel']} • {ex_src['parcel_count']} parcels affected ({ex_src['districts_display']})</span>",
+                    f"**{ex_key}** <span style='background: #FEE2E2; color: #991B1B; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700;'>{type_badge}</span>  \n"
+                    f"<span style='color: #B91C1C; font-size: 12px;'>Reason: {ex_meta.get('reason', 'N/A')}</span> • "
+                    f"<span style='color: #64748B; font-size: 11.5px;'>Excluded on: {ex_meta.get('date', 'N/A')}</span>  \n"
+                    f"<span style='color: #475569; font-size: 12px;'>{parcels_affected} parcels affected</span>",
                     unsafe_allow_html=True
                 )
             with ex_c2:
-                st.markdown(f"<a href='{ex_src['source_url']}' target='_blank' style='font-size: 12px; color: #1D4ED8; text-decoration: none;'>🔗 Open Source Website ↗</a>", unsafe_allow_html=True)
+                # Find sample url if available
+                sample_url = next((p.get("source_url") for p in all_parcels if p.get("source_name") == ex_key or p.get("published_news_source") == ex_key), "")
+                if sample_url:
+                    st.markdown(f"<a href='{sample_url}' target='_blank' style='font-size: 12px; color: #1D4ED8; text-decoration: none;'>🔗 Open Link ↗</a>", unsafe_allow_html=True)
+                else:
+                    st.markdown("<span style='color: #94A3B8; font-size: 12px;'>Direct Filter</span>", unsafe_allow_html=True)
             with ex_c3:
-                if st.button("✅ Restore", key=f"btn_restore_single_{hash(ex_src['source_name'])}", use_container_width=True):
-                    restore_source(ex_src["source_name"])
+                if st.button("✅ Restore", key=f"btn_restore_key_{hash(ex_key)}", use_container_width=True):
+                    restore_source(ex_key)
                     st.session_state["excluded_sources"] = load_excluded_sources()
-                    st.success(f"Restored '{ex_src['source_name']}'!")
+                    st.success(f"Restored '{ex_key}'!")
                     st.rerun()
             st.divider()
 
     st.markdown("---")
 
-    # 6. Master Sources Directory Table & Search
+    # 7. Master Sources Directory Table & Search
     st.markdown("#### 📋 Master Sourcing Directory & Registry")
     st.caption("Browse all distinct data providers, verify URLs, examine parcel counts and due diligence ratings.")
 
-    dir_f1, dir_f2, dir_f3 = st.columns([2.5, 1.5, 1.5])
-    with dir_f1:
-        txt_src_search = st.text_input("🔍 Search sources by name, district, or channel...", key="txt_search_sources").strip().lower()
-    with dir_f2:
-        ch_filter_options = ["All Channels"] + [c["channel"] for c in channel_summaries]
-        sel_ch_filter = st.selectbox("Filter by Channel:", options=ch_filter_options, key="sb_filter_sources_channel")
-    with dir_f3:
-        sel_status_filter = st.selectbox("Filter by Status:", options=["All Sources", "Active Only (Included)", "Excluded Only (Hidden)"], key="sb_filter_sources_status")
+    dir_tab1, dir_tab2 = st.tabs([
+        f"🏢 Sourcing Platforms & Portals ({total_sources_count})",
+        f"📰 Published News Platforms ({total_news_count})"
+    ])
 
-    # Filter registry according to inputs
-    disp_registry = list(sources_registry)
-    if txt_src_search:
-        disp_registry = [
-            s for s in disp_registry
-            if txt_src_search in s["source_name"].lower()
-            or txt_src_search in s["source_channel"].lower()
-            or txt_src_search in s["districts_display"].lower()
-            or txt_src_search in s["published_news_source"].lower()
-        ]
-    if sel_ch_filter != "All Channels":
-        disp_registry = [s for s in disp_registry if s["source_channel"] == sel_ch_filter]
-    if sel_status_filter == "Active Only (Included)":
-        disp_registry = [s for s in disp_registry if not s["is_excluded"]]
-    elif sel_status_filter == "Excluded Only (Hidden)":
-        disp_registry = [s for s in disp_registry if s["is_excluded"]]
+    with dir_tab1:
+        dir_f1, dir_f2, dir_f3 = st.columns([2.5, 1.5, 1.5])
+        with dir_f1:
+            txt_src_search = st.text_input("🔍 Search portal sources...", key="txt_search_sources").strip().lower()
+        with dir_f2:
+            ch_filter_options = ["All Channels"] + [c["channel"] for c in channel_summaries]
+            sel_ch_filter = st.selectbox("Filter by Channel:", options=ch_filter_options, key="sb_filter_sources_channel")
+        with dir_f3:
+            sel_status_filter = st.selectbox("Filter by Status:", options=["All Sources", "Active Only (Included)", "Excluded Only (Hidden)"], key="sb_filter_sources_status")
 
-    st.caption(f"Showing **{len(disp_registry)}** of {total_sources_count} sources:")
+        disp_registry = list(sources_registry)
+        if txt_src_search:
+            disp_registry = [
+                s for s in disp_registry
+                if txt_src_search in s["source_name"].lower()
+                or txt_src_search in s["source_channel"].lower()
+                or txt_src_search in s["districts_display"].lower()
+                or txt_src_search in s["published_news_source"].lower()
+            ]
+        if sel_ch_filter != "All Channels":
+            disp_registry = [s for s in disp_registry if s["source_channel"] == sel_ch_filter]
+        if sel_status_filter == "Active Only (Included)":
+            disp_registry = [s for s in disp_registry if not s["is_excluded"]]
+        elif sel_status_filter == "Excluded Only (Hidden)":
+            disp_registry = [s for s in disp_registry if s["is_excluded"]]
 
-    if disp_registry:
-        table_data = []
-        for s in disp_registry:
-            table_data.append({
-                "Status": "🚫 Excluded" if s["is_excluded"] else "🟢 Active",
-                "Source Name": s["source_name"],
-                "Channel": s["source_channel"].split(" ", 1)[-1],
-                "Parcels": s["parcel_count"],
-                "Districts": s["districts_display"],
-                "Tier": s["sourcing_tier"].split(":", 1)[0],
-                "Avg Score": f"{s['avg_due_diligence_score']}/100",
-                "Avg Rate/Acre": f"₹{s['avg_price_acre']}L",
-                "Website URL": s["source_url"],
-                "Exclusion Reason": s["exclusion_reason"] if s["is_excluded"] else "—"
-            })
-        st.dataframe(pd.DataFrame(table_data), use_container_width=True, height=420)
-    else:
-        st.info("No sources match the selected directory filter criteria.")
+        st.caption(f"Showing **{len(disp_registry)}** of {total_sources_count} portal sources:")
+
+        if disp_registry:
+            table_data = []
+            for s in disp_registry:
+                table_data.append({
+                    "Status": "🚫 Excluded" if s["is_excluded"] else "🟢 Active",
+                    "Source Name": s["source_name"],
+                    "Channel": s["source_channel"].split(" ", 1)[-1],
+                    "Parcels": s["parcel_count"],
+                    "Districts": s["districts_display"],
+                    "Tier": s["sourcing_tier"].split(":", 1)[0],
+                    "Avg Score": f"{s['avg_due_diligence_score']}/100",
+                    "Avg Rate/Acre": f"₹{s['avg_price_acre']}L",
+                    "Website URL": s["source_url"],
+                    "Exclusion Reason": s["exclusion_reason"] if s["is_excluded"] else "—"
+                })
+            st.dataframe(pd.DataFrame(table_data), use_container_width=True, height=400)
+        else:
+            st.info("No sources match the selected directory filter criteria.")
+
+    with dir_tab2:
+        dir2_f1, dir2_f2 = st.columns([3.0, 2.0])
+        with dir2_f1:
+            txt_news_search = st.text_input("🔍 Search published news platforms...", key="txt_search_news").strip().lower()
+        with dir2_f2:
+            sel_news_status = st.selectbox("Filter News by Status:", options=["All Platforms", "Active Only (Included)", "Excluded Only (Hidden)"], key="sb_filter_news_status")
+
+        disp_news = list(news_registry)
+        if txt_news_search:
+            disp_news = [
+                n for n in disp_news
+                if txt_news_search in n["news_source"].lower()
+                or txt_news_search in n["districts_display"].lower()
+                or txt_news_search in n["channels_display"].lower()
+            ]
+        if sel_news_status == "Active Only (Included)":
+            disp_news = [n for n in disp_news if not n["is_excluded"]]
+        elif sel_news_status == "Excluded Only (Hidden)":
+            disp_news = [n for n in disp_news if n["is_excluded"]]
+
+        st.caption(f"Showing **{len(disp_news)}** of {total_news_count} published news platforms:")
+
+        if disp_news:
+            news_table_data = []
+            for n in disp_news:
+                news_table_data.append({
+                    "Status": "🚫 Excluded" if n["is_excluded"] else "🟢 Active",
+                    "News Platform / Bulletin": n["news_source"],
+                    "Total Parcels": n["parcel_count"],
+                    "Districts Covered": n["districts_display"],
+                    "Associated Channels": n["channels_display"],
+                    "Avg Score": f"{n['avg_due_diligence_score']}/100",
+                    "Avg Rate/Acre": f"₹{n['avg_price_acre']}L",
+                    "Sample Notice Link": n["sample_url"],
+                    "Exclusion Reason": n["exclusion_reason"] if n["is_excluded"] else "—"
+                })
+            st.dataframe(pd.DataFrame(news_table_data), use_container_width=True, height=360)
+        else:
+            st.info("No published news platforms match the filter criteria.")
 
 # -------------------------------------------------------------
 # TAB 7: EXPORT CENTER (EXCEL & CSV)
