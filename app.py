@@ -89,7 +89,8 @@ from utils.source_exclusion_manager import (
     is_source_excluded,
     build_sources_registry,
     get_channel_summaries,
-    classify_source_channel
+    classify_source_channel,
+    is_bank_eauction_or_stressed_asset
 )
 from utils.github_ai_agent import (
     query_farmland_agent,
@@ -668,6 +669,9 @@ if "excluded_sources" not in st.session_state:
 if "show_excluded_sources" not in st.session_state:
     st.session_state["show_excluded_sources"] = False
 
+if "exclude_bank_auctions" not in st.session_state:
+    st.session_state["exclude_bank_auctions"] = False
+
 if "map_clicked_coord" not in st.session_state:
     st.session_state["map_clicked_coord"] = None
 
@@ -1072,6 +1076,16 @@ chk_fake = st.sidebar.checkbox(
 st.session_state["show_ignored"] = chk_ignored
 st.session_state["show_fake"] = chk_fake
 
+# Bank E-Auction & Stressed Assets Exclusion Filter
+bank_total_sidebar_count = sum(1 for p in all_parcels if is_bank_eauction_or_stressed_asset(p))
+chk_exclude_bank_sb = st.sidebar.checkbox(
+    f"🚫 Exclude Bank E-Auctions ({bank_total_sidebar_count})",
+    value=st.session_state["exclude_bank_auctions"],
+    key="sb_chk_exclude_bank",
+    help="Filter out all Bank SARFAESI e-auctions, recovery notices, and stressed bank assets across maps, tables, and dossiers."
+)
+st.session_state["exclude_bank_auctions"] = chk_exclude_bank_sb
+
 # 6. Caste Category & Section 98 UP Revenue Code Filter
 caste_filter = st.sidebar.selectbox(
     "⚖️ Landowner Caste & Sec 98 Filter:",
@@ -1159,6 +1173,11 @@ for p in all_parcels:
         if flag_type == "ignored" and not st.session_state["show_ignored"]:
             continue
         if flag_type == "fake" and not st.session_state["show_fake"]:
+            continue
+
+    # Check 1-Click Bank E-Auction & Stressed Asset Exclusion Filter
+    if st.session_state.get("exclude_bank_auctions", False):
+        if is_bank_eauction_or_stressed_asset(p):
             continue
 
     # Check Source Exclusion Filter (Quality Control for Outdated / Incorrect Sources)
@@ -1373,6 +1392,35 @@ with view_tabs[0]:
             ],
             key="micro_market_select"
         )
+
+    # -----------------------------------------------------------------
+    # SINGLE-CLICK TOGGLE: EXCLUDE BANK E-AUCTIONS & STRESSED ASSETS
+    # -----------------------------------------------------------------
+    is_bank_excluded = st.session_state.get("exclude_bank_auctions", False)
+    bank_total_pool = sum(1 for p in all_parcels if is_bank_eauction_or_stressed_asset(p))
+
+    st.markdown("---")
+    t1_qbar1, t1_qbar2 = st.columns([3.4, 1.6])
+    with t1_qbar1:
+        if is_bank_excluded:
+            st.info(
+                f"🛡️ **Stressed Assets Excluded:** **{bank_total_pool}** Bank SARFAESI e-auctions & distressed listings filtered out. "
+                f"Now browsing **Direct Landowner / Farmer** & **Verified Private Portals** (99acres, MagicBricks, RealEstateIndia, OLX, SFarmsIndia)."
+            )
+        else:
+            st.caption(
+                f"🏛️ **Asset Sourcing Overview:** Full inventory active ({len(all_parcels)} parcels) including **{bank_total_pool}** Bank SARFAESI / IBAPI e-auctions. "
+                f"Click the 1-click button on the right to exclude all bank recovery & stressed assets."
+            )
+    with t1_qbar2:
+        if is_bank_excluded:
+            if st.button("✅ 1-Click: Include Bank E-Auctions", key="btn_t1_include_bank_auctions", type="primary", use_container_width=True, help="Re-include all Bank SARFAESI e-auctions and recovery assets into map and ledger"):
+                st.session_state["exclude_bank_auctions"] = False
+                st.rerun()
+        else:
+            if st.button("🚫 1-Click: Exclude Bank E-Auctions", key="btn_t1_exclude_bank_auctions", type="secondary", use_container_width=True, help="1-Click: Exclude all Bank SARFAESI e-auctions, recovery notices, and stressed assets"):
+                st.session_state["exclude_bank_auctions"] = True
+                st.rerun()
 
     st.markdown(f"### 🗺️ Google Maps Terrain & Satellite Intelligence with Concentric Buffers")
     st.caption(f"Default view: **Google Maps Terrain** (switchable to Satellite/Hybrid/Roadmap via top-right layer control). Concentric buffer rings (20-100 km) radiating from **{active_lm['name']}**.")
@@ -1697,10 +1745,19 @@ with view_tabs[0]:
     # PROPERTY SUMMARY TABLE IN TAB 1 (FILTERABLE BY DISTRICT)
     # -------------------------------------------------------------
     st.markdown("---")
-    col_tab1_h1, col_tab1_h2 = st.columns([3.5, 1.2])
+    col_tab1_h1, col_tab1_h2, col_tab1_h3 = st.columns([2.8, 1.4, 1.0])
     with col_tab1_h1:
         st.markdown(f"### 📋 Property Summary & Critique AI Ledger: {st.session_state['filter_district']}")
     with col_tab1_h2:
+        if is_bank_excluded:
+            if st.button("✅ Include Bank Auctions", key="btn_tab1_include_bank_table", use_container_width=True, help="Include Bank SARFAESI recovery auctions in table"):
+                st.session_state["exclude_bank_auctions"] = False
+                st.rerun()
+        else:
+            if st.button("🚫 Exclude Bank Auctions", key="btn_tab1_exclude_bank_table", use_container_width=True, help="1-Click: Exclude Bank SARFAESI recovery auctions from table"):
+                st.session_state["exclude_bank_auctions"] = True
+                st.rerun()
+    with col_tab1_h3:
         if st.button("🔄 Refresh Data", key="btn_tab1_refresh_data", use_container_width=True):
             with st.spinner("Refreshing farmland inventory, satellite telemetry, and road routing..."):
                 st.cache_data.clear()

@@ -93,12 +93,12 @@ def classify_source_channel(source_name: str, news_source: str = "", source_url:
     """Classifies a source into a canonical high-level channel."""
     comb = f"{source_name} {news_source} {source_url}".lower()
 
-    if any(k in comb for k in ["sarfaesi", "ibapi", "bank of baroda", "state bank of india", "sbi", "pnb", "union bank", "recovery"]):
+    if any(k in comb for k in ["sarfaesi", "ibapi", "bank of baroda", "state bank of india", "sbi", "pnb", "union bank", "recovery", "stressed"]):
         return "🏦 Bank SARFAESI / IBAPI Distressed Auctions"
     elif any(k in comb for k in ["bhulekh", "revenue", "bihar bhumi", "mp bhulekh", "tehsil", "sadar", "rtc", "kacheri"]):
         return "🏛️ Government Revenue Portals (UP / Bihar / MP Bhulekh)"
-    elif any(k in comb for k in ["sfarmsindia", "99acres", "magicbricks", "brokerage"]):
-        return "🏡 Private Farmland & Agri-Portals (SFarmsIndia / 99acres)"
+    elif any(k in comb for k in ["sfarmsindia", "99acres", "magicbricks", "realestateindia", "olx", "brokerage"]):
+        return "🏡 Private Farmland & Real Estate Portals (99acres / MagicBricks / RealEstateIndia / OLX)"
     elif any(k in comb for k in ["youtube", "drone walk", "video lead", "channel"]):
         return "📹 Social Media & Farmer Video Walkthrough Leads"
     elif any(k in comb for k in ["jagran", "amar ujala", "hindustan", "e-paper", "bulletin", "gazette", "notice"]):
@@ -106,6 +106,27 @@ def classify_source_channel(source_name: str, news_source: str = "", source_url:
     elif any(k in comb for k in ["mission", "sandalwood", "agro-forestry", "nhai", "highway", "icar", "kvk", "cish", "cimap"]):
         return "🌿 Institutional Agro-Missions & Research Institutes"
     return "🌐 General Farmland Listings"
+
+
+def is_bank_eauction_or_stressed_asset(parcel: Dict[str, Any]) -> bool:
+    """
+    Identifies whether a parcel originates from Bank SARFAESI e-auctions,
+    distressed bank recovery notices, or recovery officer proceedings.
+    """
+    tier = str(parcel.get("sourcing_tier", "")).lower()
+    src = str(parcel.get("source_name", "")).lower()
+    seller = str(parcel.get("seller_category", "")).lower()
+    news = str(parcel.get("published_news_source", "")).lower()
+    legal = str(parcel.get("notice_or_legal_type", "")).lower()
+    url = str(parcel.get("source_url", "")).lower()
+    comb = f"{tier} {src} {seller} {news} {legal} {url}"
+    return any(k in comb for k in [
+        "sarfaesi", "ibapi", "e-auction", "eauction", 
+        "bank distress", "stressed asset", "recovery officer", 
+        "sarb", "recovery notice", "bank of baroda", "state bank of india",
+        "pnb cleared"
+    ])
+
 
 
 def is_source_excluded(

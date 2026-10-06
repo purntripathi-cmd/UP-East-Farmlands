@@ -1286,6 +1286,68 @@ def test_app_data_sources_tab_and_quality_control_integration():
     assert "Master Sourcing Directory & Registry" in app_code
 
 
+def test_private_portal_onboarding_and_classification():
+    """Verifies onboarding of 99acres, MagicBricks, RealEstateIndia, and OLX India portals."""
+    from utils.source_exclusion_manager import classify_source_channel
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "up_east_farmlands.json")
+    with open(data_path, "r", encoding="utf-8") as f:
+        parcels = json.load(f)
+
+    portals_found = {"99acres": 0, "magicbricks": 0, "realestateindia": 0, "olx": 0}
+    for p in parcels:
+        comb = f"{p.get('source_name', '')} {p.get('source_url', '')} {p.get('published_news_source', '')}".lower()
+        for k in portals_found:
+            if k in comb:
+                portals_found[k] += 1
+
+    # Verify each private portal has multiple verified listings
+    for portal, count in portals_found.items():
+        assert count >= 6, f"Expected at least 6 listings for {portal}, found {count}"
+
+    # Verify canonical channel classification for all 4 private portals
+    assert "Private Farmland" in classify_source_channel("99acres Agricultural Listings")
+    assert "Private Farmland" in classify_source_channel("MagicBricks Land & Plots")
+    assert "Private Farmland" in classify_source_channel("RealEstateIndia Verified Agri-Portal")
+    assert "Private Farmland" in classify_source_channel("OLX India Farmland Classifieds")
+    assert "Private Farmland" in classify_source_channel("SFarmsIndia Direct Listing")
+
+
+def test_is_bank_eauction_or_stressed_asset_and_filtering():
+    """Verifies bank auction detection helper and filtering functionality."""
+    from utils.source_exclusion_manager import is_bank_eauction_or_stressed_asset
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "up_east_farmlands.json")
+    with open(data_path, "r", encoding="utf-8") as f:
+        parcels = json.load(f)
+
+    bank_parcels = [p for p in parcels if is_bank_eauction_or_stressed_asset(p)]
+    non_bank_parcels = [p for p in parcels if not is_bank_eauction_or_stressed_asset(p)]
+
+    assert len(bank_parcels) >= 60, f"Expected at least 60 bank auction parcels, got {len(bank_parcels)}"
+    assert len(non_bank_parcels) >= 60, f"Expected at least 60 clear non-bank parcels, got {len(non_bank_parcels)}"
+
+    # Check that private portal listings are NOT flagged as bank distressed assets
+    for p in parcels:
+        if any(portal in p.get("source_name", "").lower() for portal in ["99acres", "magicbricks", "realestateindia", "olx"]):
+            assert not is_bank_eauction_or_stressed_asset(p), f"Private portal parcel {p['id']} erroneously flagged as bank auction"
+
+
+def test_app_tab1_1click_bank_auction_exclusion_integration():
+    """Verifies that app.py integrates 1-click Bank E-Auction exclusion in Tab 1 and Sidebar."""
+    app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
+    with open(app_path, "r", encoding="utf-8") as f:
+        app_code = f.read()
+
+    assert "exclude_bank_auctions" in app_code
+    assert "is_bank_eauction_or_stressed_asset" in app_code
+    assert "btn_t1_exclude_bank_auctions" in app_code
+    assert "btn_t1_include_bank_auctions" in app_code
+    assert "btn_tab1_exclude_bank_table" in app_code
+    assert "btn_tab1_include_bank_table" in app_code
+    assert "sb_chk_exclude_bank" in app_code
+    assert "Stressed Assets Excluded" in app_code
+
+
+
 
 
 
