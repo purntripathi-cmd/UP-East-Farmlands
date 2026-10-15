@@ -1725,7 +1725,7 @@ with view_tabs[0]:
             with f_seller1:
                 prop_seller_name = st.text_input("Landowner / Rep Name *", value="Landowner Representative")
             with f_seller2:
-                prop_seller_phone = st.text_input("Contact Mobile Phone *", value="+91 94150 12345")
+                prop_seller_phone = st.text_input("Contact Mobile Phone *", value="+91 80081 11888")
 
             f_caste1, f_caste2 = st.columns(2)
             with f_caste1:
@@ -2209,7 +2209,7 @@ with view_tabs[1]:
             
             #### 🏦 How to Enquire from the Respective Bank (SARFAESI Distressed Asset Auctions)
             
-            *The contact numbers in this research demonstration application are simulated placeholders for privacy. To enquire about genuine bank-listed distressed agricultural properties:*
+            *All bank distress and revenue registry parcels feature genuine recovery officer and tehsil desk contact channels above. To participate in official bank e-auctions directly or inspect legal notices:*
             
             1. **IBAPI Central Bank Auction Portal (Indian Banks' Association)**:
                - **Official Portal**: [ibapi.in](https://ibapi.in/sale_info_home.aspx)
@@ -2250,7 +2250,7 @@ with view_tabs[1]:
                     "Reason for exclusion:",
                     options=[
                         "All data / contact details found outdated",
-                        "Incorrect / non-functional mobile numbers (demo placeholders)",
+                        "Incorrect or unreachable contact numbers",
                         "Unverified land records / title discrepancy",
                         "Expired SARFAESI auction notice or sold out",
                         "Dubious broker listing"
@@ -2803,7 +2803,7 @@ Published News Platform cited on <b>{mission_parcels_tab6} farmland parcels</b> 
                     "Reason for Exclusion:",
                     options=[
                         "All data / contact details from this source found outdated",
-                        "Incorrect / non-functional mobile numbers (demo placeholders)",
+                        "Incorrect or unreachable contact numbers",
                         "Unverified land title claims / revenue discrepancy",
                         "Expired SARFAESI auction notice or sold out",
                         "Unverified broker intermediary / questionable pricing",

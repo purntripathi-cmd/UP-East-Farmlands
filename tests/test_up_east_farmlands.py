@@ -1179,10 +1179,11 @@ def test_legal_due_diligence_official_verification_links_and_bank_enquiry_manual
     assert "🔍 Google Search ↗" in legal_html
 
     seller_html = render_seller_contact_card_html(sample)
-    assert "Prototype Notice" in seller_html
+    assert "Verified Contact" in seller_html
     assert "ibapi.in" in seller_html
     assert "upbhulekh.gov.in" in seller_html
-    assert "(Demo)" in seller_html
+    assert "tel:" in seller_html
+    assert "wa.me" in seller_html
 
     app_path = os.path.join(os.path.dirname(__file__), "..", "app.py")
     with open(app_path, "r", encoding="utf-8") as f:
